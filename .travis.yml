@@ -1,0 +1,34 @@
+---
+language: java
+script: |
+    if [[ "$SONAR_BUILD" == 'true' && "$TRAVIS_SECURE_ENV_VARS" == 'true' ]] ; then
+      mvn sonar:sonar -Dsonar.host.url="$SONAR_HOST_URL" -Dsonar.login="$SONAR_LOGIN" -Dsonar.password="$SONAR_PASSWORD" -Dsonar.jdbc.url="jdbc:mysql://$SONAR_JDBC_URL?useUnicode=true&characterEncoding=utf8&rewriteBatchedStatements=true" -Dsonar.jdbc.username="$SONAR_JDBC_USERNAME" -Dsonar.jdbc.password="$SONAR_JDBC_PASSWORD"
+    else
+      mvn test
+    fi
+jdk:
+  - openjdk6
+  - openjdk7
+  - oraclejdk8
+env:
+  global:
+    - secure: VgRqxTra79+YbXmRYQy13fClpmKtJLIxX94sLaNyEaqpa7XBvG3lbTnxyUCUAUVnN5+juxgRYuuy88iKuXsV7G/jDajwPDX6SX6hdSrN9/YT7Z6xz6tmiWIaQThFwjhpgLPhSYtXcFsTzCWOuH0kgL+tP3NK6F1oZXdthzD0CUo= # SONAR_HOST_URL
+    - secure: Gw/Y7QFpcmUPnrToQG2eG2zPnRSD+G9yhCwLjNvLQqrJvzNb4cTYYH13wbaOwfDAzD6sN6NZq2pk6YBEKogo142dEfagiX6flC4mG+BhuIrE453lK/iF/ky/TJpJ6tmxdgodFYyHf67VqVN3IyR9Jwr+mQynLadfktCLcPa8Xrk= # SONAR_LOGIN
+    - secure: VV289Onhmz0RORTNBKZxTnKqUzI/nZUN/ozZZDjTQSMNHbhwiG8iKETOERQXtFVJXXVy/k4t6qgpRk41RdRuSu4s0EZfK0tuhkhxpsE7vSOtGv5FSJ7kdTjsiW+cnx/kbJ/8IC52GIa/1IJwEH4R6dBso2DZEt01SJ+Y1ltBOHU= # SONAR_PASSWORD
+    - secure: GkOyf+iM6zV3H+AX4TvptxPeiLLOftL/bA1I8xe8DKPwEYFf5+B1jg6N+WPEowvrii2HGfH0RGDx3HzGkFJ7xRQ28/Y2/BkMpfBQw2uy2RMHNP2vw8iIyyKaPjRDzDp4su7NS/hBhcqJrc7CTbH/46y1cU84mxSp60D0VEd8F8U= # SONAR_JDBC_URL
+    - secure: EyaKYV6XEPRcGpH6I07fNpne0zsYQNCHtyBbRKm1iWWUloJQsvfYWAoXYa0SdrCRICQFgMrUQXa+XrcSo7/9NPEnoWGErSXPlGyCCi5sNvEBbwmqKb82PJb6klxw8c/g/TxpA6brtFusRg1a6IejWiiUlN8YHPJc2+xqzhSmu5Q= # SONAR_JDBC_USERNAME
+    - secure: Wrf9j/JJPUcin/KiR+0eyAdUYiPUpbydgLDAYZzljNXYqaxVRDE/a8H6Qh5YkID/z9YN7V+jmVnHEqZxnj08VnNJwoZspBL8IiB5PSKWHsWAcSkdPIuTk21i2ufAuBMJzVhRnhiQaSQPYnTdOMjFm2QLnDKdiEXAc4soKFeo4AU= # SONAR_JDBC_PASSWORD
+  matrix:
+    - SONAR_BUILD=true
+    - SONAR_BUILD=false
+matrix:
+  exclude:
+    - jdk: openjdk6
+      env: SONAR_BUILD=true
+    - jdk: oraclejdk8
+      env: SONAR_BUILD=true
+notifications:
+  webhooks:
+    urls:
+      - http://build-monitor.cfapps.io/projects/RDMN/webhook
+    on_start: true
