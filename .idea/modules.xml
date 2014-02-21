@@ -2,7 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/redis-manager.iml" filepath="$PROJECT_DIR$/redis-manager.iml" />
+      <module fileurl="file://$PROJECT_DIR$/common/common.iml" filepath="$PROJECT_DIR$/common/common.iml" />
+      <module fileurl="file://$PROJECT_DIR$/redis-store/redis-store.iml" filepath="$PROJECT_DIR$/redis-store/redis-store.iml" />
+      <module fileurl="file://$PROJECT_DIR$/session-managers.iml" filepath="$PROJECT_DIR$/session-managers.iml" />
     </modules>
   </component>
 </project>
