@@ -31,6 +31,7 @@ import redis.clients.jedis.Protocol;
 
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
+import java.net.URI;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -238,6 +239,25 @@ public final class RedisStore extends AbstractLifecycle implements Store {
         }
     }
 
+    /**
+     * Sets the connection URI
+     *
+     * @param uri the connection URI
+     */
+    public void setUri(URI uri) {
+        Lock lock = this.monitor.writeLock();
+        lock.lock();
+
+        try {
+            setHost(uri.getHost());
+            setPort(uri.getPort());
+            setPassword(parsePassword(uri));
+            setDatabase(parseDatabase(uri));
+        } finally {
+            lock.unlock();
+        }
+    }
+
     @Override
     protected void initInternal() {
         Lock lock = this.monitor.readLock();
@@ -295,6 +315,14 @@ public final class RedisStore extends AbstractLifecycle implements Store {
         } finally {
             returnResourceQuietly(jedis);
         }
+    }
+
+    private int parseDatabase(URI uri) {
+        return Integer.parseInt(uri.getPath().split("/", 2)[1]);
+    }
+
+    private String parsePassword(URI uri) {
+        return uri.getUserInfo().split(":", 2)[1];
     }
 
     private void returnResourceQuietly(Jedis jedis) {
