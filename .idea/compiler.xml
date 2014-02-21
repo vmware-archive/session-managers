@@ -22,11 +22,13 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
-        <module name="redis-manager" />
+        <module name="common" />
+        <module name="redis-store" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="redis-manager" target="1.7" />
+      <module name="common" target="1.7" />
+      <module name="redis-store" target="1.7" />
     </bytecodeTargetLevel>
   </component>
 </project>

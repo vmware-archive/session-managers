@@ -8,7 +8,7 @@ This project is an implementation of the Tomcat `SessionManager` that persists d
 [Pull requests][] are welcome; see the [contributor guidelines][] for details.
 
 ## License
-This system test is released under version 2.0 of the [Apache License][].
+This project is released under version 2.0 of the [Apache License][].
 
 [Apache License]: http://www.apache.org/licenses/LICENSE-2.0
 [contributor guidelines]: CONTRIBUTING.md
