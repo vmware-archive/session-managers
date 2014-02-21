@@ -3,7 +3,7 @@ language: java
 script: |
     if [[ "$RELEASE_BUILD" == 'true' && "$TRAVIS_SECURE_ENV_VARS" == 'true' ]] ; then
       mvn deploy
-    else if [[ "$SONAR_BUILD" == 'true' && "$TRAVIS_SECURE_ENV_VARS" == 'true' ]] ; then
+    elif [[ "$SONAR_BUILD" == 'true' && "$TRAVIS_SECURE_ENV_VARS" == 'true' ]] ; then
       mvn sonar:sonar -Dsonar.host.url="$SONAR_HOST_URL" -Dsonar.login="$SONAR_LOGIN" -Dsonar.password="$SONAR_PASSWORD" -Dsonar.jdbc.url="jdbc:mysql://$SONAR_JDBC_URL?useUnicode=true&characterEncoding=utf8&rewriteBatchedStatements=true" -Dsonar.jdbc.username="$SONAR_JDBC_USERNAME" -Dsonar.jdbc.password="$SONAR_JDBC_PASSWORD"
     else
       mvn test

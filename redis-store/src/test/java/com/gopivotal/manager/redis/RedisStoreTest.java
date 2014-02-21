@@ -91,6 +91,13 @@ public final class RedisStoreTest {
     }
 
     @Test
+    public void port() {
+        this.store.setPort(1234);
+
+        verify(this.propertyChangeSupport).notify("port", 6379, 1234);
+    }
+
+    @Test
     public void propertyChangeListeners() {
         this.store.addPropertyChangeListener(this.propertyChangeListener);
         verify(this.propertyChangeSupport).add(this.propertyChangeListener);
