@@ -27,6 +27,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
 import java.beans.PropertyChangeListener;
+import java.net.URI;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -147,5 +148,15 @@ public final class RedisStoreTest {
         this.store.setTimeout(1234);
 
         verify(this.propertyChangeSupport).notify("timeout", 2000, 1234);
+    }
+
+    @Test
+    public void uri() {
+        this.store.setUri(URI.create("redis://test-username:test-password@test-host:1234/7"));
+
+        verify(this.propertyChangeSupport).notify("host", "localhost", "test-host");
+        verify(this.propertyChangeSupport).notify("port", 6379, 1234);
+        verify(this.propertyChangeSupport).notify("password", null, "test-password");
+        verify(this.propertyChangeSupport).notify("database", 0, 7);
     }
 }
