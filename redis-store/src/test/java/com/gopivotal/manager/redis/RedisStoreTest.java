@@ -53,6 +53,13 @@ public final class RedisStoreTest {
     }
 
     @Test
+    public void database() {
+        this.store.setDatabase(7);
+
+        verify(this.propertyChangeSupport).notify("database", 0, 7);
+    }
+
+    @Test
     public void getInfo() {
         assertEquals("RedisStore/1.0", this.store.getInfo());
     }
@@ -98,13 +105,6 @@ public final class RedisStoreTest {
     }
 
     @Test
-    public void timeout() {
-        this.store.setTimeout(1234);
-
-        verify(this.propertyChangeSupport).notify("timeout", 2000, 1234);
-    }
-
-    @Test
     public void port() {
         this.store.setPort(1234);
 
@@ -140,5 +140,12 @@ public final class RedisStoreTest {
     @Test
     public void stopInternalNoPool() {
         this.store.stopInternal();
+    }
+
+    @Test
+    public void timeout() {
+        this.store.setTimeout(1234);
+
+        verify(this.propertyChangeSupport).notify("timeout", 2000, 1234);
     }
 }

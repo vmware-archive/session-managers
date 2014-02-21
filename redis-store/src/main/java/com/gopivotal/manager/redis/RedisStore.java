@@ -49,6 +49,8 @@ public final class RedisStore extends AbstractLifecycle implements Store {
 
     private final PropertyChangeSupport propertyChangeSupport;
 
+    private volatile int database = Protocol.DEFAULT_DATABASE;
+
     private volatile String host = "localhost";
 
     private volatile JedisPool jedisPool;
@@ -144,6 +146,24 @@ public final class RedisStore extends AbstractLifecycle implements Store {
     @Override
     public void save(Session session) throws IOException {
         // TODO
+    }
+
+    /**
+     * Sets the database to connect to
+     *
+     * @param database the database to connect to
+     */
+    public void setDatabase(int database) {
+        Lock lock = this.monitor.writeLock();
+        lock.lock();
+
+        try {
+            int previous = this.database;
+            this.database = database;
+            this.propertyChangeSupport.notify("database", previous, this.database);
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -243,7 +263,7 @@ public final class RedisStore extends AbstractLifecycle implements Store {
         try {
             if (jedisPool == null) {
                 this.jedisPool = new JedisPool(new JedisPoolConfig(), this.host, this.port, this.timeout,
-                        this.password);
+                        this.password, this.database);
             }
             connect();
         } finally {
@@ -269,7 +289,8 @@ public final class RedisStore extends AbstractLifecycle implements Store {
     private void connect() {
         Jedis jedis = null;
         try {
-            this.logger.info(String.format("Connecting to Redis Server at redis://%s:%s", this.host, this.port));
+            this.logger.info(String.format("Connecting to Redis Server at redis://%s:%d/%d", this.host, this.port,
+                    this.database));
             jedis = this.jedisPool.getResource();
         } finally {
             returnResourceQuietly(jedis);
