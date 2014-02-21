@@ -49,6 +49,13 @@ public final class RedisStoreTest {
     private final RedisStore store = new RedisStore(this.jedisPool, this.propertyChangeSupport);
 
     @Test
+    public void connectionPoolSize() {
+        this.store.setConnectionPoolSize(1);
+
+        verify(this.propertyChangeSupport).notify("connectionPoolSize", -1, 1);
+    }
+
+    @Test
     public void constructor() {
         new RedisStore();
     }

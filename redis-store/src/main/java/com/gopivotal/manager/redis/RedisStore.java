@@ -24,6 +24,7 @@ import org.apache.catalina.Manager;
 import org.apache.catalina.Session;
 import org.apache.catalina.Store;
 import org.apache.catalina.Valve;
+import org.apache.commons.pool2.impl.GenericKeyedObjectPoolConfig;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -49,6 +50,8 @@ public final class RedisStore extends AbstractLifecycle implements Store {
     private final ReadWriteLock monitor = new ReentrantReadWriteLock();
 
     private final PropertyChangeSupport propertyChangeSupport;
+
+    private volatile int connectionPoolSize = GenericKeyedObjectPoolConfig.DEFAULT_MAX_TOTAL;
 
     private volatile int database = Protocol.DEFAULT_DATABASE;
 
@@ -147,6 +150,24 @@ public final class RedisStore extends AbstractLifecycle implements Store {
     @Override
     public void save(Session session) throws IOException {
         // TODO
+    }
+
+    /**
+     * Sets the connection pool size
+     *
+     * @param connectionPoolSize the connectionPoolSize
+     */
+    public void setConnectionPoolSize(int connectionPoolSize) {
+        Lock lock = this.monitor.writeLock();
+        lock.lock();
+
+        try {
+            int previous = this.connectionPoolSize;
+            this.connectionPoolSize = connectionPoolSize;
+            this.propertyChangeSupport.notify("connectionPoolSize", previous, this.connectionPoolSize);
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -282,7 +303,10 @@ public final class RedisStore extends AbstractLifecycle implements Store {
 
         try {
             if (jedisPool == null) {
-                this.jedisPool = new JedisPool(new JedisPoolConfig(), this.host, this.port, this.timeout,
+                JedisPoolConfig poolConfig = new JedisPoolConfig();
+                poolConfig.setMaxTotal(this.connectionPoolSize);
+
+                this.jedisPool = new JedisPool(poolConfig, this.host, this.port, this.timeout,
                         this.password, this.database);
             }
             connect();
@@ -311,6 +335,7 @@ public final class RedisStore extends AbstractLifecycle implements Store {
         try {
             this.logger.info(String.format("Connecting to Redis Server at redis://%s:%d/%d", this.host, this.port,
                     this.database));
+            this.logger.info("Connection to Redis Server successful");
             jedis = this.jedisPool.getResource();
         } finally {
             returnResourceQuietly(jedis);
@@ -335,4 +360,5 @@ public final class RedisStore extends AbstractLifecycle implements Store {
             }
         }
     }
+
 }
