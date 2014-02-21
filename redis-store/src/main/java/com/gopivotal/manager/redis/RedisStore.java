@@ -53,6 +53,8 @@ public final class RedisStore extends AbstractLifecycle implements Store {
 
     private volatile Manager manager;
 
+    private volatile int port = 6379;
+
     /**
      * Create a new instance
      *
@@ -156,6 +158,24 @@ public final class RedisStore extends AbstractLifecycle implements Store {
         }
     }
 
+    /**
+     * Sets the port to connect to
+     *
+     * @param port the port to connect to
+     */
+    public void setPort(int port) {
+        Lock lock = this.monitor.writeLock();
+        lock.lock();
+
+        try {
+            int previous = this.port;
+            this.port = port;
+            this.propertyChangeSupport.notify("port", previous, this.port);
+        } finally {
+            lock.unlock();
+        }
+    }
+
     @Override
     protected void initInternal() {
         Lock lock = this.monitor.readLock();
@@ -180,7 +200,7 @@ public final class RedisStore extends AbstractLifecycle implements Store {
 
         try {
             if (jedisPool == null) {
-                this.jedisPool = new JedisPool(this.host);
+                this.jedisPool = new JedisPool(this.host, this.port);
             }
             connect();
         } finally {
@@ -206,7 +226,7 @@ public final class RedisStore extends AbstractLifecycle implements Store {
     private void connect() {
         Jedis jedis = null;
         try {
-            this.logger.info(String.format("Connecting to Redis Server at redis://%s", this.host));
+            this.logger.info(String.format("Connecting to Redis Server at redis://%s:%s", this.host, this.port));
             jedis = this.jedisPool.getResource();
         } finally {
             returnResourceQuietly(jedis);
