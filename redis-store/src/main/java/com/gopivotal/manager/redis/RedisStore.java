@@ -73,6 +73,7 @@ public final class RedisStore extends AbstractLifecycle implements Store {
      * @see com.gopivotal.manager.StandardPropertyChangeSupport
      */
     public RedisStore() {
+        this.logger.info(String.format("Sessions will be persisted to Redis using a %s", this.getClass().getName()));
         this.propertyChangeSupport = new StandardPropertyChangeSupport(this);
     }
 
