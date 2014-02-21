@@ -28,7 +28,7 @@ env:
 matrix:
   exclude:
     - jdk: oraclejdk8
-      env: RELEASE=true
+      env: RELEASE_BUILD=true
     - jdk: oraclejdk8
       env: SONAR_BUILD=true
 notifications:
