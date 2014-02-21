@@ -26,6 +26,8 @@ import org.apache.catalina.Store;
 import org.apache.catalina.Valve;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.Protocol;
 
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
@@ -53,7 +55,11 @@ public final class RedisStore extends AbstractLifecycle implements Store {
 
     private volatile Manager manager;
 
-    private volatile int port = 6379;
+    private volatile String password;
+
+    private volatile int port = Protocol.DEFAULT_PORT;
+
+    private volatile int timeout = Protocol.DEFAULT_TIMEOUT;
 
     /**
      * Create a new instance
@@ -159,6 +165,24 @@ public final class RedisStore extends AbstractLifecycle implements Store {
     }
 
     /**
+     * Sets the password to use when connecting
+     *
+     * @param password the password to use when connecting
+     */
+    public void setPassword(String password) {
+        Lock lock = this.monitor.writeLock();
+        lock.lock();
+
+        try {
+            String previous = this.password;
+            this.password = password;
+            this.propertyChangeSupport.notify("password", previous, this.password);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
      * Sets the port to connect to
      *
      * @param port the port to connect to
@@ -171,6 +195,24 @@ public final class RedisStore extends AbstractLifecycle implements Store {
             int previous = this.port;
             this.port = port;
             this.propertyChangeSupport.notify("port", previous, this.port);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Sets the connection timeout
+     *
+     * @param timeout the connection timeout
+     */
+    public void setTimeout(int timeout) {
+        Lock lock = this.monitor.writeLock();
+        lock.lock();
+
+        try {
+            int previous = this.timeout;
+            this.timeout = timeout;
+            this.propertyChangeSupport.notify("timeout", previous, this.timeout);
         } finally {
             lock.unlock();
         }
@@ -200,7 +242,8 @@ public final class RedisStore extends AbstractLifecycle implements Store {
 
         try {
             if (jedisPool == null) {
-                this.jedisPool = new JedisPool(this.host, this.port);
+                this.jedisPool = new JedisPool(new JedisPoolConfig(), this.host, this.port, this.timeout,
+                        this.password);
             }
             connect();
         } finally {

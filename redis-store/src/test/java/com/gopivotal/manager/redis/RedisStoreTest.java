@@ -91,6 +91,20 @@ public final class RedisStoreTest {
     }
 
     @Test
+    public void password() {
+        this.store.setPassword("test-password");
+
+        verify(this.propertyChangeSupport).notify("password", null, "test-password");
+    }
+
+    @Test
+    public void timeout() {
+        this.store.setTimeout(1234);
+
+        verify(this.propertyChangeSupport).notify("timeout", 2000, 1234);
+    }
+
+    @Test
     public void port() {
         this.store.setPort(1234);
 
