@@ -49,31 +49,12 @@ public final class LockTemplate {
      * @param <T>       the type of the return value
      * @return the return value
      */
-    public <T> T withReadLock(ReturningOperation<T> operation) {
+    public <T> T withReadLock(LockedOperation<T> operation) {
         Lock lock = this.monitor.readLock();
         lock.lock();
 
         try {
             return operation.invoke();
-        } catch (Exception e) {
-            this.logger.severe(e.getMessage());
-            throw new RuntimeException(e);
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    /**
-     * Execute an operation that does not return a value with read locking
-     *
-     * @param operation the operation to execute
-     */
-    public void withReadLock(Operation operation) {
-        Lock lock = this.monitor.readLock();
-        lock.lock();
-
-        try {
-            operation.invoke();
         } catch (Exception e) {
             this.logger.severe(e.getMessage());
             throw new RuntimeException(e);
@@ -89,7 +70,7 @@ public final class LockTemplate {
      * @param <T>       the type of the return value
      * @return the return value
      */
-    public <T> T withWriteLock(ReturningOperation<T> operation) {
+    public <T> T withWriteLock(LockedOperation<T> operation) {
         Lock lock = this.monitor.writeLock();
         lock.lock();
 
@@ -104,44 +85,11 @@ public final class LockTemplate {
     }
 
     /**
-     * Execute an operation that does not return a value with write locking
-     *
-     * @param operation the operation to execute
-     */
-    public void withWriteLock(Operation operation) {
-        Lock lock = this.monitor.writeLock();
-        lock.lock();
-
-        try {
-            operation.invoke();
-        } catch (Exception e) {
-            this.logger.severe(e.getMessage());
-            throw new RuntimeException(e);
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    /**
-     * A closure-like interface for operations that do not return a value
-     */
-    public interface Operation {
-
-        /**
-         * Invoke the operation
-         *
-         * @throws Exception
-         */
-        @SuppressWarnings("PMD.SignatureDeclareThrowsException")
-        void invoke() throws Exception;
-    }
-
-    /**
      * A closure-like interface for operations that return a value
      *
      * @param <T> the return type of the operation
      */
-    public interface ReturningOperation<T> {
+    public interface LockedOperation<T> {
 
         /**
          * Invoke the operation

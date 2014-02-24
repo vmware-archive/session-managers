@@ -67,7 +67,7 @@ public final class SessionFlushValve extends AbstractLifecycle implements Contai
 
     @Override
     public Container getContainer() {
-        return this.lockTemplate.withReadLock(new LockTemplate.ReturningOperation<Container>() {
+        return this.lockTemplate.withReadLock(new LockTemplate.LockedOperation<Container>() {
 
             @Override
             public Container invoke() {
@@ -79,11 +79,12 @@ public final class SessionFlushValve extends AbstractLifecycle implements Contai
 
     @Override
     public void setContainer(final Container container) {
-        this.lockTemplate.withWriteLock(new LockTemplate.Operation() {
+        this.lockTemplate.withWriteLock(new LockTemplate.LockedOperation<Void>() {
 
             @Override
-            public void invoke() {
+            public Void invoke() {
                 SessionFlushValve.this.container = container;
+                return null;
             }
 
         });
@@ -96,7 +97,7 @@ public final class SessionFlushValve extends AbstractLifecycle implements Contai
 
     @Override
     public Valve getNext() {
-        return this.lockTemplate.withReadLock(new LockTemplate.ReturningOperation<Valve>() {
+        return this.lockTemplate.withReadLock(new LockTemplate.LockedOperation<Valve>() {
 
             @Override
             public Valve invoke() {
@@ -108,11 +109,12 @@ public final class SessionFlushValve extends AbstractLifecycle implements Contai
 
     @Override
     public void setNext(final Valve valve) {
-        this.lockTemplate.withWriteLock(new LockTemplate.Operation() {
+        this.lockTemplate.withWriteLock(new LockTemplate.LockedOperation<Void>() {
 
             @Override
-            public void invoke() {
+            public Void invoke() {
                 SessionFlushValve.this.next = valve;
+                return null;
             }
 
         });
@@ -124,7 +126,7 @@ public final class SessionFlushValve extends AbstractLifecycle implements Contai
      * @return the store used when flushing the session
      */
     public Store getStore() {
-        return this.lockTemplate.withReadLock(new LockTemplate.ReturningOperation<Store>() {
+        return this.lockTemplate.withReadLock(new LockTemplate.LockedOperation<Store>() {
 
             @Override
             public Store invoke() {
@@ -140,22 +142,23 @@ public final class SessionFlushValve extends AbstractLifecycle implements Contai
      * @param store the store to use when flushing the session
      */
     public void setStore(final Store store) {
-        this.lockTemplate.withWriteLock(new LockTemplate.Operation() {
+        this.lockTemplate.withWriteLock(new LockTemplate.LockedOperation<Void>() {
 
             @Override
-            public void invoke() {
+            public Void invoke() {
                 SessionFlushValve.this.store = store;
+                return null;
             }
 
         });
     }
 
     @Override
-    public void invoke(final Request request, final Response response) throws IOException, ServletException {
-        this.lockTemplate.withReadLock(new LockTemplate.Operation() {
+    public void invoke(final Request request, final Response response) {
+        this.lockTemplate.withReadLock(new LockTemplate.LockedOperation<Void>() {
 
             @Override
-            public void invoke() throws IOException, ServletException {
+            public Void invoke() throws IOException, ServletException {
                 try {
                     SessionFlushValve.this.next.invoke(request, response);
                 } finally {
@@ -164,6 +167,8 @@ public final class SessionFlushValve extends AbstractLifecycle implements Contai
                         SessionFlushValve.this.store.save(session);
                     }
                 }
+
+                return null;
             }
 
         });
@@ -177,11 +182,12 @@ public final class SessionFlushValve extends AbstractLifecycle implements Contai
 
     @Override
     protected void startInternal() {
-        this.lockTemplate.withReadLock(new LockTemplate.Operation() {
+        this.lockTemplate.withReadLock(new LockTemplate.LockedOperation<Void>() {
 
             @Override
-            public void invoke() {
+            public Void invoke() {
                 SessionFlushValve.this.jmxSupport.register(getObjectName(), SessionFlushValve.this);
+                return null;
             }
 
         });
@@ -189,11 +195,12 @@ public final class SessionFlushValve extends AbstractLifecycle implements Contai
 
     @Override
     protected void stopInternal() {
-        this.lockTemplate.withReadLock(new LockTemplate.Operation() {
+        this.lockTemplate.withReadLock(new LockTemplate.LockedOperation<Void>() {
 
             @Override
-            public void invoke() {
+            public Void invoke() {
                 SessionFlushValve.this.jmxSupport.unregister(getObjectName());
+                return null;
             }
 
         });
