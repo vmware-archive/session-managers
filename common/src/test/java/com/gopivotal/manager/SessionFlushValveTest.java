@@ -16,6 +16,8 @@
 
 package com.gopivotal.manager;
 
+import org.apache.catalina.Context;
+import org.apache.catalina.Host;
 import org.apache.catalina.Session;
 import org.apache.catalina.Store;
 import org.apache.catalina.Valve;
@@ -37,6 +39,10 @@ import static org.mockito.Mockito.when;
 
 public final class SessionFlushValveTest {
 
+    private final JmxSupport jmxSupport = mock(JmxSupport.class);
+
+    private final SessionFlushValve valve = new SessionFlushValve(this.jmxSupport);
+
     private final Valve next = mock(Valve.class);
 
     private final Request request = mock(Request.class);
@@ -47,11 +53,18 @@ public final class SessionFlushValveTest {
 
     private final Store store = mock(Store.class);
 
-    private final SessionFlushValve valve = new SessionFlushValve();
-
     @Test
     public void backgroundProcess() {
         this.valve.backgroundProcess();
+    }
+
+    @Test
+    public void context() {
+        Context context = mock(Context.class);
+
+        this.valve.setContainer(context);
+
+        assertSame(context, this.valve.getContainer());
     }
 
     @Test
@@ -110,5 +123,42 @@ public final class SessionFlushValveTest {
     @Test
     public void next() {
         assertSame(this.next, this.valve.getNext());
+    }
+
+    @Test
+    public void startInternal() {
+        Context context = mock(Context.class);
+        Host host = mock(Host.class);
+
+        this.valve.setContainer(context);
+        when(context.getName()).thenReturn("test-context-name");
+        when(context.getParent()).thenReturn(host);
+        when(host.getName()).thenReturn("test-host-name");
+
+        this.valve.startInternal();
+
+        verify(this.jmxSupport).register("Catalina:type=Valve,context=/test-context-name,host=test-host-name," +
+                "name=SessionFlushValve", this.valve);
+    }
+
+    @Test
+    public void stopInternal() {
+        Context context = mock(Context.class);
+        Host host = mock(Host.class);
+
+        this.valve.setContainer(context);
+        when(context.getName()).thenReturn("test-context-name");
+        when(context.getParent()).thenReturn(host);
+        when(host.getName()).thenReturn("test-host-name");
+
+        this.valve.stopInternal();
+
+        verify(this.jmxSupport).unregister("Catalina:type=Valve,context=/test-context-name,host=test-host-name," +
+                "name=SessionFlushValve");
+    }
+
+    @Test
+    public void store() {
+        assertSame(this.store, this.valve.getStore());
     }
 }
