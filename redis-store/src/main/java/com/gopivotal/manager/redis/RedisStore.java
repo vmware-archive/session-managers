@@ -101,7 +101,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
         return this.lockTemplate.withReadLock(new LockTemplate.ReturningOperation<Integer>() {
 
             @Override
-            public Integer invoke()  {
+            public Integer invoke() {
                 return RedisStore.this.connectionPoolSize;
             }
 
@@ -117,7 +117,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
         this.lockTemplate.withWriteLock(new LockTemplate.Operation() {
 
             @Override
-            public void invoke()  {
+            public void invoke() {
                 int previous = RedisStore.this.connectionPoolSize;
                 RedisStore.this.connectionPoolSize = connectionPoolSize;
                 RedisStore.this.propertyChangeSupport.notify("connectionPoolSize", previous,
@@ -132,7 +132,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
         return this.lockTemplate.withReadLock(new LockTemplate.ReturningOperation<Integer>() {
 
             @Override
-            public Integer invoke()  {
+            public Integer invoke() {
                 return RedisStore.this.database;
             }
 
@@ -148,7 +148,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
         this.lockTemplate.withWriteLock(new LockTemplate.Operation() {
 
             @Override
-            public void invoke()  {
+            public void invoke() {
                 int previous = RedisStore.this.database;
                 RedisStore.this.database = database;
                 RedisStore.this.propertyChangeSupport.notify("database", previous, RedisStore.this.database);
@@ -162,7 +162,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
         return this.lockTemplate.withReadLock(new LockTemplate.ReturningOperation<String>() {
 
             @Override
-            public String invoke()  {
+            public String invoke() {
                 return RedisStore.this.host;
             }
 
@@ -178,7 +178,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
         this.lockTemplate.withWriteLock(new LockTemplate.Operation() {
 
             @Override
-            public void invoke()  {
+            public void invoke() {
                 String previous = RedisStore.this.host;
                 RedisStore.this.host = host;
                 RedisStore.this.propertyChangeSupport.notify("host", previous, RedisStore.this.host);
@@ -197,7 +197,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
         return this.lockTemplate.withReadLock(new LockTemplate.ReturningOperation<Manager>() {
 
             @Override
-            public Manager invoke()  {
+            public Manager invoke() {
                 return RedisStore.this.manager;
             }
 
@@ -223,7 +223,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
         return this.lockTemplate.withReadLock(new LockTemplate.ReturningOperation<String>() {
 
             @Override
-            public String invoke()  {
+            public String invoke() {
                 return RedisStore.this.password;
             }
 
@@ -239,7 +239,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
         this.lockTemplate.withWriteLock(new LockTemplate.Operation() {
 
             @Override
-            public void invoke()  {
+            public void invoke() {
                 String previous = RedisStore.this.password;
                 RedisStore.this.password = password;
                 RedisStore.this.propertyChangeSupport.notify("password", previous, RedisStore.this.password);
@@ -253,7 +253,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
         return this.lockTemplate.withReadLock(new LockTemplate.ReturningOperation<Integer>() {
 
             @Override
-            public Integer invoke()  {
+            public Integer invoke() {
                 return RedisStore.this.port;
             }
 
@@ -269,7 +269,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
         this.lockTemplate.withWriteLock(new LockTemplate.Operation() {
 
             @Override
-            public void invoke()  {
+            public void invoke() {
                 int previous = RedisStore.this.port;
                 RedisStore.this.port = port;
                 RedisStore.this.propertyChangeSupport.notify("port", previous, RedisStore.this.port);
@@ -288,7 +288,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
         return this.lockTemplate.withReadLock(new LockTemplate.ReturningOperation<Integer>() {
 
             @Override
-            public Integer invoke()  {
+            public Integer invoke() {
                 return RedisStore.this.timeout;
             }
 
@@ -304,7 +304,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
         this.lockTemplate.withWriteLock(new LockTemplate.Operation() {
 
             @Override
-            public void invoke()  {
+            public void invoke() {
                 int previous = RedisStore.this.timeout;
                 RedisStore.this.timeout = timeout;
                 RedisStore.this.propertyChangeSupport.notify("timeout", previous, RedisStore.this.timeout);
@@ -317,7 +317,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
     public String getUri() {
         return this.lockTemplate.withReadLock(new LockTemplate.ReturningOperation<String>() {
             @Override
-            public String invoke()  {
+            public String invoke() {
                 return String.format("redis://:%s@%s:%d/%d", RedisStore.this.password, RedisStore.this.host,
                         RedisStore.this.port, RedisStore.this.database);
             }
@@ -329,15 +329,16 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
      *
      * @param uri the connection URI
      */
-    public void setUri(final URI uri) {
+    public void setUri(final String uri) {
         this.lockTemplate.withWriteLock(new LockTemplate.Operation() {
 
             @Override
-            public void invoke()  {
-                setHost(uri.getHost());
-                setPort(uri.getPort());
-                setPassword(parsePassword(uri));
-                setDatabase(parseDatabase(uri));
+            public void invoke() {
+                URI richUri = URI.create(uri);
+                setHost(richUri.getHost());
+                setPort(richUri.getPort());
+                setPassword(parsePassword(richUri));
+                setDatabase(parseDatabase(richUri));
             }
 
         });
@@ -373,7 +374,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
         this.lockTemplate.withReadLock(new LockTemplate.Operation() {
 
             @Override
-            public void invoke()  {
+            public void invoke() {
                 for (Valve valve : RedisStore.this.manager.getContainer().getPipeline().getValves()) {
                     if (valve instanceof SessionFlushValve) {
                         RedisStore.this.logger.fine(String.format("Setting '%s' as the store for '%s'", this, valve));
@@ -390,7 +391,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
         this.lockTemplate.withWriteLock(new LockTemplate.Operation() {
 
             @Override
-            public void invoke()  {
+            public void invoke() {
                 if (RedisStore.this.jedisPool == null) {
                     JedisPoolConfig poolConfig = new JedisPoolConfig();
                     poolConfig.setMaxTotal(RedisStore.this.connectionPoolSize);
@@ -411,7 +412,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
         this.lockTemplate.withWriteLock(new LockTemplate.Operation() {
 
             @Override
-            public void invoke()  {
+            public void invoke() {
                 if (RedisStore.this.jedisPool != null) {
                     RedisStore.this.logger.info("Closing connection to Redis Server");
                     RedisStore.this.jedisPool.destroy();
