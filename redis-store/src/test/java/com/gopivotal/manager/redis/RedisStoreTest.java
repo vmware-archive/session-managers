@@ -29,7 +29,6 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
 import java.beans.PropertyChangeListener;
-import java.net.URI;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -203,7 +202,7 @@ public final class RedisStoreTest {
 
     @Test
     public void uri() {
-        this.store.setUri(URI.create("redis://test-username:test-password@test-host:1234/7"));
+        this.store.setUri("redis://test-username:test-password@test-host:1234/7");
 
         assertEquals("redis://:test-password@test-host:1234/7", this.store.getUri());
         verify(this.propertyChangeSupport).notify("host", "localhost", "test-host");
