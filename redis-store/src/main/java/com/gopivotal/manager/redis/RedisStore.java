@@ -17,8 +17,11 @@
 package com.gopivotal.manager.redis;
 
 import com.gopivotal.manager.AbstractLifecycle;
+import com.gopivotal.manager.JmxSupport;
+import com.gopivotal.manager.LockTemplate;
 import com.gopivotal.manager.PropertyChangeSupport;
 import com.gopivotal.manager.SessionFlushValve;
+import com.gopivotal.manager.StandardJmxSupport;
 import com.gopivotal.manager.StandardPropertyChangeSupport;
 import org.apache.catalina.Manager;
 import org.apache.catalina.Session;
@@ -33,21 +36,20 @@ import redis.clients.jedis.Protocol;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.net.URI;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
 
 /**
  * An implementation of {@link Store} that persists data to Redis
  */
-public final class RedisStore extends AbstractLifecycle implements Store {
+public final class RedisStore extends AbstractLifecycle implements RedisStoreManagement, Store {
 
     private static final String INFO = "RedisStore/1.0";
 
-    private final Logger logger = Logger.getLogger(this.getClass().getName());
+    private final JmxSupport jmxSupport;
 
-    private final ReadWriteLock monitor = new ReentrantReadWriteLock();
+    private final LockTemplate lockTemplate = new LockTemplate();
+
+    private final Logger logger = Logger.getLogger(this.getClass().getName());
 
     private final PropertyChangeSupport propertyChangeSupport;
 
@@ -74,11 +76,13 @@ public final class RedisStore extends AbstractLifecycle implements Store {
      */
     public RedisStore() {
         this.logger.info(String.format("Sessions will be persisted to Redis using a %s", this.getClass().getName()));
+        this.jmxSupport = new StandardJmxSupport();
         this.propertyChangeSupport = new StandardPropertyChangeSupport(this);
     }
 
-    RedisStore(JedisPool jedisPool, PropertyChangeSupport propertyChangeSupport) {
+    RedisStore(JedisPool jedisPool, JmxSupport jmxSupport, PropertyChangeSupport propertyChangeSupport) {
         this.jedisPool = jedisPool;
+        this.jmxSupport = jmxSupport;
         this.propertyChangeSupport = propertyChangeSupport;
     }
 
@@ -93,39 +97,250 @@ public final class RedisStore extends AbstractLifecycle implements Store {
     }
 
     @Override
+    public int getConnectionPoolSize() {
+        return this.lockTemplate.withReadLock(new LockTemplate.ReturningOperation<Integer>() {
+
+            @Override
+            public Integer invoke()  {
+                return RedisStore.this.connectionPoolSize;
+            }
+
+        });
+    }
+
+    /**
+     * Sets the connection pool size
+     *
+     * @param connectionPoolSize the connectionPoolSize
+     */
+    public void setConnectionPoolSize(final int connectionPoolSize) {
+        this.lockTemplate.withWriteLock(new LockTemplate.Operation() {
+
+            @Override
+            public void invoke()  {
+                int previous = RedisStore.this.connectionPoolSize;
+                RedisStore.this.connectionPoolSize = connectionPoolSize;
+                RedisStore.this.propertyChangeSupport.notify("connectionPoolSize", previous,
+                        RedisStore.this.connectionPoolSize);
+            }
+
+        });
+    }
+
+    @Override
+    public int getDatabase() {
+        return this.lockTemplate.withReadLock(new LockTemplate.ReturningOperation<Integer>() {
+
+            @Override
+            public Integer invoke()  {
+                return RedisStore.this.database;
+            }
+
+        });
+    }
+
+    /**
+     * Sets the database to connect to
+     *
+     * @param database the database to connect to
+     */
+    public void setDatabase(final int database) {
+        this.lockTemplate.withWriteLock(new LockTemplate.Operation() {
+
+            @Override
+            public void invoke()  {
+                int previous = RedisStore.this.database;
+                RedisStore.this.database = database;
+                RedisStore.this.propertyChangeSupport.notify("database", previous, RedisStore.this.database);
+            }
+
+        });
+    }
+
+    @Override
+    public String getHost() {
+        return this.lockTemplate.withReadLock(new LockTemplate.ReturningOperation<String>() {
+
+            @Override
+            public String invoke()  {
+                return RedisStore.this.host;
+            }
+
+        });
+    }
+
+    /**
+     * Sets the host to connect to
+     *
+     * @param host the host to connect to
+     */
+    public void setHost(final String host) {
+        this.lockTemplate.withWriteLock(new LockTemplate.Operation() {
+
+            @Override
+            public void invoke()  {
+                String previous = RedisStore.this.host;
+                RedisStore.this.host = host;
+                RedisStore.this.propertyChangeSupport.notify("host", previous, RedisStore.this.host);
+            }
+
+        });
+    }
+
+    @Override
     public String getInfo() {
         return INFO;
     }
 
     @Override
     public Manager getManager() {
-        Lock lock = this.monitor.readLock();
-        lock.lock();
+        return this.lockTemplate.withReadLock(new LockTemplate.ReturningOperation<Manager>() {
 
-        try {
-            return this.manager;
-        } finally {
-            lock.unlock();
-        }
+            @Override
+            public Manager invoke()  {
+                return RedisStore.this.manager;
+            }
+
+        });
     }
 
     @Override
-    public void setManager(Manager manager) {
-        Lock lock = this.monitor.writeLock();
-        lock.lock();
+    public void setManager(final Manager manager) {
+        this.lockTemplate.withWriteLock(new LockTemplate.Operation() {
 
-        try {
-            Manager previous = this.manager;
-            this.manager = manager;
-            this.propertyChangeSupport.notify("manager", previous, this.manager);
-        } finally {
-            lock.unlock();
-        }
+            @Override
+            public void invoke() {
+                Manager previous = RedisStore.this.manager;
+                RedisStore.this.manager = manager;
+                RedisStore.this.propertyChangeSupport.notify("manager", previous, RedisStore.this.manager);
+            }
+
+        });
+    }
+
+    @Override
+    public String getPassword() {
+        return this.lockTemplate.withReadLock(new LockTemplate.ReturningOperation<String>() {
+
+            @Override
+            public String invoke()  {
+                return RedisStore.this.password;
+            }
+
+        });
+    }
+
+    /**
+     * Sets the password to use when connecting
+     *
+     * @param password the password to use when connecting
+     */
+    public void setPassword(final String password) {
+        this.lockTemplate.withWriteLock(new LockTemplate.Operation() {
+
+            @Override
+            public void invoke()  {
+                String previous = RedisStore.this.password;
+                RedisStore.this.password = password;
+                RedisStore.this.propertyChangeSupport.notify("password", previous, RedisStore.this.password);
+            }
+
+        });
+    }
+
+    @Override
+    public int getPort() {
+        return this.lockTemplate.withReadLock(new LockTemplate.ReturningOperation<Integer>() {
+
+            @Override
+            public Integer invoke()  {
+                return RedisStore.this.port;
+            }
+
+        });
+    }
+
+    /**
+     * Sets the port to connect to
+     *
+     * @param port the port to connect to
+     */
+    public void setPort(final int port) {
+        this.lockTemplate.withWriteLock(new LockTemplate.Operation() {
+
+            @Override
+            public void invoke()  {
+                int previous = RedisStore.this.port;
+                RedisStore.this.port = port;
+                RedisStore.this.propertyChangeSupport.notify("port", previous, RedisStore.this.port);
+            }
+
+        });
     }
 
     @Override
     public int getSize() throws IOException {
         return 0;                                      // TODO
+    }
+
+    @Override
+    public int getTimeout() {
+        return this.lockTemplate.withReadLock(new LockTemplate.ReturningOperation<Integer>() {
+
+            @Override
+            public Integer invoke()  {
+                return RedisStore.this.timeout;
+            }
+
+        });
+    }
+
+    /**
+     * Sets the connection timeout
+     *
+     * @param timeout the connection timeout
+     */
+    public void setTimeout(final int timeout) {
+        this.lockTemplate.withWriteLock(new LockTemplate.Operation() {
+
+            @Override
+            public void invoke()  {
+                int previous = RedisStore.this.timeout;
+                RedisStore.this.timeout = timeout;
+                RedisStore.this.propertyChangeSupport.notify("timeout", previous, RedisStore.this.timeout);
+            }
+
+        });
+    }
+
+    @Override
+    public String getUri() {
+        return this.lockTemplate.withReadLock(new LockTemplate.ReturningOperation<String>() {
+            @Override
+            public String invoke()  {
+                return String.format("redis://:%s@%s:%d/%d", RedisStore.this.password, RedisStore.this.host,
+                        RedisStore.this.port, RedisStore.this.database);
+            }
+        });
+    }
+
+    /**
+     * Sets the connection URI
+     *
+     * @param uri the connection URI
+     */
+    public void setUri(final URI uri) {
+        this.lockTemplate.withWriteLock(new LockTemplate.Operation() {
+
+            @Override
+            public void invoke()  {
+                setHost(uri.getHost());
+                setPort(uri.getPort());
+                setPassword(parsePassword(uri));
+                setDatabase(parseDatabase(uri));
+            }
+
+        });
     }
 
     @Override
@@ -153,182 +368,59 @@ public final class RedisStore extends AbstractLifecycle implements Store {
         // TODO
     }
 
-    /**
-     * Sets the connection pool size
-     *
-     * @param connectionPoolSize the connectionPoolSize
-     */
-    public void setConnectionPoolSize(int connectionPoolSize) {
-        Lock lock = this.monitor.writeLock();
-        lock.lock();
-
-        try {
-            int previous = this.connectionPoolSize;
-            this.connectionPoolSize = connectionPoolSize;
-            this.propertyChangeSupport.notify("connectionPoolSize", previous, this.connectionPoolSize);
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    /**
-     * Sets the database to connect to
-     *
-     * @param database the database to connect to
-     */
-    public void setDatabase(int database) {
-        Lock lock = this.monitor.writeLock();
-        lock.lock();
-
-        try {
-            int previous = this.database;
-            this.database = database;
-            this.propertyChangeSupport.notify("database", previous, this.database);
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    /**
-     * Sets the host to connect to
-     *
-     * @param host the host to connect to
-     */
-    public void setHost(String host) {
-        Lock lock = this.monitor.writeLock();
-        lock.lock();
-
-        try {
-            String previous = this.host;
-            this.host = host;
-            this.propertyChangeSupport.notify("host", previous, this.host);
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    /**
-     * Sets the password to use when connecting
-     *
-     * @param password the password to use when connecting
-     */
-    public void setPassword(String password) {
-        Lock lock = this.monitor.writeLock();
-        lock.lock();
-
-        try {
-            String previous = this.password;
-            this.password = password;
-            this.propertyChangeSupport.notify("password", previous, this.password);
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    /**
-     * Sets the port to connect to
-     *
-     * @param port the port to connect to
-     */
-    public void setPort(int port) {
-        Lock lock = this.monitor.writeLock();
-        lock.lock();
-
-        try {
-            int previous = this.port;
-            this.port = port;
-            this.propertyChangeSupport.notify("port", previous, this.port);
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    /**
-     * Sets the connection timeout
-     *
-     * @param timeout the connection timeout
-     */
-    public void setTimeout(int timeout) {
-        Lock lock = this.monitor.writeLock();
-        lock.lock();
-
-        try {
-            int previous = this.timeout;
-            this.timeout = timeout;
-            this.propertyChangeSupport.notify("timeout", previous, this.timeout);
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    /**
-     * Sets the connection URI
-     *
-     * @param uri the connection URI
-     */
-    public void setUri(URI uri) {
-        Lock lock = this.monitor.writeLock();
-        lock.lock();
-
-        try {
-            setHost(uri.getHost());
-            setPort(uri.getPort());
-            setPassword(parsePassword(uri));
-            setDatabase(parseDatabase(uri));
-        } finally {
-            lock.unlock();
-        }
-    }
-
     @Override
     protected void initInternal() {
-        Lock lock = this.monitor.readLock();
-        lock.lock();
+        this.lockTemplate.withReadLock(new LockTemplate.Operation() {
 
-        try {
-            for (Valve valve : this.manager.getContainer().getPipeline().getValves()) {
-                if (valve instanceof SessionFlushValve) {
-                    this.logger.fine(String.format("Setting '%s' as the store for '%s'", this, valve));
-                    ((SessionFlushValve) valve).setStore(this);
+            @Override
+            public void invoke()  {
+                for (Valve valve : RedisStore.this.manager.getContainer().getPipeline().getValves()) {
+                    if (valve instanceof SessionFlushValve) {
+                        RedisStore.this.logger.fine(String.format("Setting '%s' as the store for '%s'", this, valve));
+                        ((SessionFlushValve) valve).setStore(RedisStore.this);
+                    }
                 }
             }
-        } finally {
-            lock.unlock();
-        }
+
+        });
     }
 
     @Override
     protected void startInternal() {
-        Lock lock = this.monitor.writeLock();
-        lock.lock();
+        this.lockTemplate.withWriteLock(new LockTemplate.Operation() {
 
-        try {
-            if (jedisPool == null) {
-                JedisPoolConfig poolConfig = new JedisPoolConfig();
-                poolConfig.setMaxTotal(this.connectionPoolSize);
+            @Override
+            public void invoke()  {
+                if (RedisStore.this.jedisPool == null) {
+                    JedisPoolConfig poolConfig = new JedisPoolConfig();
+                    poolConfig.setMaxTotal(RedisStore.this.connectionPoolSize);
 
-                this.jedisPool = new JedisPool(poolConfig, this.host, this.port, this.timeout,
-                        this.password, this.database);
+                    RedisStore.this.jedisPool = new JedisPool(poolConfig, RedisStore.this.host, RedisStore.this.port,
+                            RedisStore.this.timeout, RedisStore.this.password, RedisStore.this.database);
+                }
+
+                connect();
+                RedisStore.this.jmxSupport.register(getObjectName(), RedisStore.this);
             }
-            connect();
-        } finally {
-            lock.unlock();
-        }
+
+        });
     }
 
     @Override
     protected void stopInternal() {
-        Lock lock = this.monitor.writeLock();
-        lock.lock();
+        this.lockTemplate.withWriteLock(new LockTemplate.Operation() {
 
-        try {
-            if (this.jedisPool != null) {
-                this.logger.info("Closing connection to Redis Server");
-                this.jedisPool.destroy();
+            @Override
+            public void invoke()  {
+                if (RedisStore.this.jedisPool != null) {
+                    RedisStore.this.logger.info("Closing connection to Redis Server");
+                    RedisStore.this.jedisPool.destroy();
+                }
+
+                RedisStore.this.jmxSupport.unregister(getObjectName());
             }
-        } finally {
-            lock.unlock();
-        }
+
+        });
     }
 
     private void connect() {
@@ -341,6 +433,19 @@ public final class RedisStore extends AbstractLifecycle implements Store {
         } finally {
             returnResourceQuietly(jedis);
         }
+    }
+
+    private String getContext() {
+        String name = this.manager.getContainer().getName();
+        return name.startsWith("/") ? name : String.format("/%s", name);
+    }
+
+    private String getObjectName() {
+        String contextPath = getContext();
+        String hostName = this.manager.getContainer().getParent().getName();
+
+        return String.format("Catalina:type=Store,context=%s,host=%s,name=%s", contextPath, hostName,
+                getClass().getSimpleName());
     }
 
     private int parseDatabase(URI uri) {

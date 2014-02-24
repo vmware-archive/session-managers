@@ -16,9 +16,11 @@
 
 package com.gopivotal.manager.redis;
 
+import com.gopivotal.manager.JmxSupport;
 import com.gopivotal.manager.PropertyChangeSupport;
 import com.gopivotal.manager.SessionFlushValve;
-import org.apache.catalina.Container;
+import org.apache.catalina.Context;
+import org.apache.catalina.Host;
 import org.apache.catalina.Manager;
 import org.apache.catalina.Pipeline;
 import org.apache.catalina.Valve;
@@ -40,18 +42,21 @@ public final class RedisStoreTest {
 
     private final JedisPool jedisPool = mock(JedisPool.class);
 
+    private final JmxSupport jmxSupport = mock(JmxSupport.class);
+
     private final Manager manager = mock(Manager.class);
 
     private final PropertyChangeListener propertyChangeListener = mock(PropertyChangeListener.class);
 
     private final PropertyChangeSupport propertyChangeSupport = mock(PropertyChangeSupport.class);
 
-    private final RedisStore store = new RedisStore(this.jedisPool, this.propertyChangeSupport);
+    private final RedisStore store = new RedisStore(this.jedisPool, this.jmxSupport, this.propertyChangeSupport);
 
     @Test
     public void connectionPoolSize() {
         this.store.setConnectionPoolSize(1);
 
+        assertEquals(1, this.store.getConnectionPoolSize());
         verify(this.propertyChangeSupport).notify("connectionPoolSize", -1, 1);
     }
 
@@ -64,6 +69,7 @@ public final class RedisStoreTest {
     public void database() {
         this.store.setDatabase(7);
 
+        assertEquals(7, this.store.getDatabase());
         verify(this.propertyChangeSupport).notify("database", 0, 7);
     }
 
@@ -76,18 +82,19 @@ public final class RedisStoreTest {
     public void host() {
         this.store.setHost("test-host");
 
+        assertEquals("test-host", this.store.getHost());
         verify(this.propertyChangeSupport).notify("host", "localhost", "test-host");
     }
 
     @Test
     public void initInternal() {
-        Container container = mock(Container.class);
+        Context context = mock(Context.class);
         Pipeline pipeline = mock(Pipeline.class);
         SessionFlushValve valve = new SessionFlushValve();
 
         this.store.setManager(this.manager);
-        when(this.manager.getContainer()).thenReturn(container);
-        when(container.getPipeline()).thenReturn(pipeline);
+        when(this.manager.getContainer()).thenReturn(context);
+        when(context.getPipeline()).thenReturn(pipeline);
         when(pipeline.getValves()).thenReturn(new Valve[]{mock(Valve.class), valve});
 
         this.store.initInternal();
@@ -109,6 +116,7 @@ public final class RedisStoreTest {
     public void password() {
         this.store.setPassword("test-password");
 
+        assertEquals("test-password", this.store.getPassword());
         verify(this.propertyChangeSupport).notify("password", null, "test-password");
     }
 
@@ -116,6 +124,7 @@ public final class RedisStoreTest {
     public void port() {
         this.store.setPort(1234);
 
+        assertEquals(1234, this.store.getPort());
         verify(this.propertyChangeSupport).notify("port", 6379, 1234);
     }
 
@@ -130,30 +139,65 @@ public final class RedisStoreTest {
 
     @Test
     public void startInternal() {
+        Context context = mock(Context.class);
+        Host host = mock(Host.class);
         Jedis jedis = mock(Jedis.class);
 
+        this.store.setHost("test.host");
+        this.store.setManager(this.manager);
+        when(this.manager.getContainer()).thenReturn(context);
+        when(context.getName()).thenReturn("test-context-name");
+        when(context.getParent()).thenReturn(host);
+        when(host.getName()).thenReturn("test-host-name");
         when(this.jedisPool.getResource()).thenReturn(jedis);
 
-        this.store.setHost("test.host");
         this.store.startInternal();
 
         verify(this.jedisPool).returnResource(jedis);
+        verify(this.jmxSupport).register("Catalina:type=Store,context=/test-context-name,host=test-host-name," +
+                "name=RedisStore", this.store);
     }
 
     @Test
     public void stopInternal() {
+        Context context = mock(Context.class);
+        Host host = mock(Host.class);
+
+        this.store.setManager(this.manager);
+        when(this.manager.getContainer()).thenReturn(context);
+        when(context.getName()).thenReturn("test-context-name");
+        when(context.getParent()).thenReturn(host);
+        when(host.getName()).thenReturn("test-host-name");
+
         this.store.stopInternal();
+
+        verify(this.jmxSupport).unregister("Catalina:type=Store,context=/test-context-name,host=test-host-name," +
+                "name=RedisStore");
     }
 
     @Test
     public void stopInternalNoPool() {
-        this.store.stopInternal();
+        Context context = mock(Context.class);
+        Host host = mock(Host.class);
+
+        RedisStore alternateStore = new RedisStore(null, this.jmxSupport, this.propertyChangeSupport);
+        alternateStore.setManager(this.manager);
+        when(this.manager.getContainer()).thenReturn(context);
+        when(context.getName()).thenReturn("test-context-name");
+        when(context.getParent()).thenReturn(host);
+        when(host.getName()).thenReturn("test-host-name");
+
+        alternateStore.stopInternal();
+
+        verify(this.jmxSupport).unregister("Catalina:type=Store,context=/test-context-name,host=test-host-name," +
+                "name=RedisStore");
     }
 
     @Test
     public void timeout() {
         this.store.setTimeout(1234);
 
+        assertEquals(1234, this.store.getTimeout());
         verify(this.propertyChangeSupport).notify("timeout", 2000, 1234);
     }
 
@@ -161,9 +205,11 @@ public final class RedisStoreTest {
     public void uri() {
         this.store.setUri(URI.create("redis://test-username:test-password@test-host:1234/7"));
 
+        assertEquals("redis://:test-password@test-host:1234/7", this.store.getUri());
         verify(this.propertyChangeSupport).notify("host", "localhost", "test-host");
         verify(this.propertyChangeSupport).notify("port", 6379, 1234);
         verify(this.propertyChangeSupport).notify("password", null, "test-password");
         verify(this.propertyChangeSupport).notify("database", 0, 7);
     }
+
 }
