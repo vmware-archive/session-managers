@@ -19,17 +19,32 @@ package com.gopivotal.manager.redis;
 import com.gopivotal.manager.JmxSupport;
 import com.gopivotal.manager.PropertyChangeSupport;
 import com.gopivotal.manager.SessionFlushValve;
+import com.gopivotal.manager.SessionSerializationUtils;
 import org.apache.catalina.Context;
 import org.apache.catalina.Host;
 import org.apache.catalina.Manager;
-import org.apache.catalina.Pipeline;
-import org.apache.catalina.Valve;
+import org.apache.catalina.Session;
+import org.apache.catalina.core.StandardContext;
+import org.apache.catalina.core.StandardHost;
+import org.apache.catalina.session.StandardManager;
+import org.apache.catalina.session.StandardSession;
+import org.apache.catalina.valves.RemoteIpValve;
+import org.junit.Before;
 import org.junit.Test;
+import redis.clients.jedis.BuilderFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.Protocol;
+import redis.clients.jedis.Response;
+import redis.clients.jedis.Transaction;
 
 import java.beans.PropertyChangeListener;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -39,17 +54,37 @@ import static org.mockito.Mockito.when;
 
 public final class RedisStoreTest {
 
+    private final Jedis jedis = mock(Jedis.class);
+
     private final JedisPool jedisPool = mock(JedisPool.class);
 
     private final JmxSupport jmxSupport = mock(JmxSupport.class);
 
-    private final Manager manager = mock(Manager.class);
+    private final Manager manager = new StandardManager();
+
+    private final SessionSerializationUtils sessionSerializationUtils = new SessionSerializationUtils(this.manager);
 
     private final PropertyChangeListener propertyChangeListener = mock(PropertyChangeListener.class);
 
     private final PropertyChangeSupport propertyChangeSupport = mock(PropertyChangeSupport.class);
 
-    private final RedisStore store = new RedisStore(this.jedisPool, this.jmxSupport, this.propertyChangeSupport);
+    private final RedisStore store = new RedisStore(this.jedisPool, this.jmxSupport, this.propertyChangeSupport,
+            this.sessionSerializationUtils);
+
+    private final Transaction transaction = mock(StubTransaction.class);
+
+    @Test
+    public void clear() throws IOException {
+        Set<String> sessionIds = new HashSet<>();
+        sessionIds.add("test-id");
+        when(this.jedis.smembers("sessions")).thenReturn(sessionIds);
+
+        this.store.clear();
+
+        verify(this.transaction).srem("sessions", "test-id");
+        verify(this.transaction).del(new String[]{"test-id"});
+        verify(this.transaction).exec();
+    }
 
     @Test
     public void connectionPoolSize() {
@@ -78,6 +113,19 @@ public final class RedisStoreTest {
     }
 
     @Test
+    public void getSize() throws IOException {
+        Response<Long> response = new Response<>(BuilderFactory.LONG);
+        response.set((long) Integer.MAX_VALUE);
+
+        when(this.transaction.scard("sessions")).thenReturn(response);
+
+        int result = this.store.getSize();
+
+        assertEquals(Integer.MAX_VALUE, result);
+        verify(this.transaction).exec();
+    }
+
+    @Test
     public void host() {
         this.store.setHost("test-host");
 
@@ -87,18 +135,45 @@ public final class RedisStoreTest {
 
     @Test
     public void initInternal() {
-        Context context = mock(Context.class);
-        Pipeline pipeline = mock(Pipeline.class);
         SessionFlushValve valve = new SessionFlushValve();
 
+        StandardContext context = (StandardContext) this.manager.getContainer();
+        context.addValve(new RemoteIpValve());
+        context.addValve(valve);
         this.store.setManager(this.manager);
-        when(this.manager.getContainer()).thenReturn(context);
-        when(context.getPipeline()).thenReturn(pipeline);
-        when(pipeline.getValves()).thenReturn(new Valve[]{mock(Valve.class), valve});
 
         this.store.initInternal();
 
         assertSame(this.store, valve.getStore());
+    }
+
+    @Test
+    public void keys() throws IOException {
+        Response<Set<String>> response = new Response<>(BuilderFactory.STRING_SET);
+        response.set(Arrays.asList("test-id".getBytes(Protocol.CHARSET)));
+
+        when(this.transaction.smembers("sessions")).thenReturn(response);
+
+        String[] result = this.store.keys();
+
+        assertArrayEquals(new String[]{"test-id"}, result);
+        verify(this.transaction).exec();
+    }
+
+    @Test
+    public void load() throws IOException {
+        Session session = new StandardSession(this.manager);
+        session.setId("test-id");
+
+        Response<byte[]> response = new Response<>(BuilderFactory.BYTE_ARRAY);
+        response.set(this.sessionSerializationUtils.serialize(session));
+
+        when(this.transaction.get("test-id".getBytes(Protocol.CHARSET))).thenReturn(response);
+
+        Session result = this.store.load("test-id");
+
+        assertEquals(session.getId(), result.getId());
+        verify(this.transaction).exec();
     }
 
     @Test
@@ -137,36 +212,59 @@ public final class RedisStoreTest {
     }
 
     @Test
-    public void startInternal() {
-        Context context = mock(Context.class);
-        Host host = mock(Host.class);
-        Jedis jedis = mock(Jedis.class);
+    public void remove() throws IOException {
+        this.store.remove("test-id");
 
+        verify(this.transaction).srem("sessions", "test-id");
+        verify(this.transaction).del("test-id");
+        verify(this.transaction).exec();
+    }
+
+    @Test
+    public void save() throws IOException {
+        Session session = new StandardSession(this.manager);
+        session.setId("test-id");
+
+        this.store.save(session);
+
+        verify(this.transaction).set(session.getId().getBytes(Protocol.CHARSET), this.sessionSerializationUtils.serialize
+                (session));
+        verify(this.transaction).sadd("sessions", "test-id");
+        verify(this.transaction).exec();
+    }
+
+    @Before
+    public void setupJedis() throws Exception {
+        when(this.jedisPool.getResource()).thenReturn(this.jedis);
+        when(this.jedis.multi()).thenReturn(this.transaction);
+    }
+
+    @Before
+    public void setupManager() {
+        Context context = new StandardContext();
+        Host host = new StandardHost();
+
+        this.manager.setContainer(context);
+        context.setName("test-context-name");
+        context.setParent(host);
+        host.setName("test-host-name");
+    }
+
+    @Test
+    public void startInternal() {
         this.store.setHost("test.host");
         this.store.setManager(this.manager);
-        when(this.manager.getContainer()).thenReturn(context);
-        when(context.getName()).thenReturn("test-context-name");
-        when(context.getParent()).thenReturn(host);
-        when(host.getName()).thenReturn("test-host-name");
-        when(this.jedisPool.getResource()).thenReturn(jedis);
 
         this.store.startInternal();
 
-        verify(this.jedisPool).returnResource(jedis);
+        verify(this.jedisPool).returnResource(this.jedis);
         verify(this.jmxSupport).register("Catalina:type=Store,context=/test-context-name,host=test-host-name," +
                 "name=RedisStore", this.store);
     }
 
     @Test
     public void stopInternal() {
-        Context context = mock(Context.class);
-        Host host = mock(Host.class);
-
         this.store.setManager(this.manager);
-        when(this.manager.getContainer()).thenReturn(context);
-        when(context.getName()).thenReturn("test-context-name");
-        when(context.getParent()).thenReturn(host);
-        when(host.getName()).thenReturn("test-host-name");
 
         this.store.stopInternal();
 
@@ -176,15 +274,9 @@ public final class RedisStoreTest {
 
     @Test
     public void stopInternalNoPool() {
-        Context context = mock(Context.class);
-        Host host = mock(Host.class);
-
-        RedisStore alternateStore = new RedisStore(null, this.jmxSupport, this.propertyChangeSupport);
+        RedisStore alternateStore = new RedisStore(null, this.jmxSupport, this.propertyChangeSupport,
+                this.sessionSerializationUtils);
         alternateStore.setManager(this.manager);
-        when(this.manager.getContainer()).thenReturn(context);
-        when(context.getName()).thenReturn("test-context-name");
-        when(context.getParent()).thenReturn(host);
-        when(host.getName()).thenReturn("test-host-name");
 
         alternateStore.stopInternal();
 
@@ -209,6 +301,50 @@ public final class RedisStoreTest {
         verify(this.propertyChangeSupport).notify("port", 6379, 1234);
         verify(this.propertyChangeSupport).notify("password", null, "test-password");
         verify(this.propertyChangeSupport).notify("database", 0, 7);
+    }
+
+
+    private static class StubTransaction extends Transaction {
+
+        @Override
+        public Response<Long> del(String key) {
+            return null;
+        }
+
+        @Override
+        public Response<Long> del(String... keys) {
+            return null;
+        }
+
+        @Override
+        public Response<byte[]> get(byte[] key) {
+            return null;
+        }
+
+        @Override
+        public Response<Long> sadd(String key, String... member) {
+            return null;
+        }
+
+        @Override
+        public Response<Long> scard(String key) {
+            return null;
+        }
+
+        @Override
+        public Response<String> set(byte[] key, byte[] value) {
+            return null;
+        }
+
+        @Override
+        public Response<Set<String>> smembers(String key) {
+            return null;
+        }
+
+        @Override
+        public Response<Long> srem(String key, String... member) {
+            return null;
+        }
     }
 
 }
