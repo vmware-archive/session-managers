@@ -57,13 +57,11 @@ final class JedisTemplate {
     }
 
     private void returnResourceQuietly(Jedis jedis) {
-        if (jedis != null) {
-            try {
-                this.jedisPool.returnResource(jedis);
-            } catch (RuntimeException e) {
-                this.logger.warning(String.format("Exception encountered when returning Jedis resource: %s",
-                        e.getMessage()));
-            }
+        try {
+            this.jedisPool.returnResource(jedis);
+        } catch (RuntimeException e) {
+            this.logger.warning(String.format("Exception encountered when returning Jedis resource: %s",
+                    e.getMessage()));
         }
     }
 

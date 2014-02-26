@@ -72,8 +72,11 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
     private volatile Manager manager;
 
     private volatile String password;
+
     private volatile int port = Protocol.DEFAULT_PORT;
+
     private volatile SessionSerializationUtils sessionSerializationUtils;
+
     private volatile int timeout = Protocol.DEFAULT_TIMEOUT;
 
     /**
@@ -87,10 +90,13 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
         this.propertyChangeSupport = new StandardPropertyChangeSupport(this);
     }
 
-    RedisStore(JedisPool jedisPool, JmxSupport jmxSupport, PropertyChangeSupport propertyChangeSupport) {
+    RedisStore(JedisPool jedisPool, JmxSupport jmxSupport, PropertyChangeSupport propertyChangeSupport,
+               SessionSerializationUtils sessionSerializationUtils) {
         this.jedisPool = jedisPool;
+        this.jedisTemplate = new JedisTemplate(this.jedisPool);
         this.jmxSupport = jmxSupport;
         this.propertyChangeSupport = propertyChangeSupport;
+        this.sessionSerializationUtils = sessionSerializationUtils;
     }
 
     @Override
@@ -436,10 +442,10 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
                     @Override
                     public Session invoke(Jedis jedis) throws IOException, ClassNotFoundException {
                         Transaction t = jedis.multi();
-                        Response<String> session = t.get(id);
+                        Response<byte[]> session = t.get(id.getBytes(Protocol.CHARSET));
                         t.exec();
 
-                        return RedisStore.this.sessionSerializationUtils.deserialize(session.get().getBytes());
+                        return RedisStore.this.sessionSerializationUtils.deserialize(session.get());
                     }
 
                 });
@@ -492,7 +498,8 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
                         String sessionId = session.getId();
 
                         Transaction t = jedis.multi();
-                        t.set(session.getId().getBytes(), RedisStore.this.sessionSerializationUtils.serialize(session));
+                        t.set(session.getId().getBytes(Protocol.CHARSET), RedisStore.this.sessionSerializationUtils
+                                .serialize(session));
                         t.sadd(SESSIONS_KEY, sessionId);
                         t.exec();
 
@@ -536,9 +543,10 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
                     RedisStore.this.jedisPool = new JedisPool(poolConfig, RedisStore.this.host, RedisStore.this.port,
                             RedisStore.this.timeout, RedisStore.this.password, RedisStore.this.database);
-                    RedisStore.this.jedisTemplate = new JedisTemplate(RedisStore.this.jedisPool);
                 }
 
+
+                RedisStore.this.jedisTemplate = new JedisTemplate(RedisStore.this.jedisPool);
                 connect();
                 RedisStore.this.jmxSupport.register(getObjectName(), RedisStore.this);
 
