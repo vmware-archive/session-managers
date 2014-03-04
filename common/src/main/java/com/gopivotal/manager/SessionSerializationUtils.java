@@ -47,11 +47,15 @@ public final class SessionSerializationUtils {
      * Deserialize a {@link Session}
      *
      * @param session a {@code byte[]} representing the serialized {@link Session}
-     * @return the deserialized {@link Session}
+     * @return the deserialized {@link Session} or {@code null} if the session data is {@code null}
      * @throws ClassNotFoundException
      * @throws IOException
      */
     public Session deserialize(byte[] session) throws ClassNotFoundException, IOException {
+        if (session == null) {
+            return null;
+        }
+
         ByteArrayInputStream bytes = null;
         ObjectInputStream in = null;
 
