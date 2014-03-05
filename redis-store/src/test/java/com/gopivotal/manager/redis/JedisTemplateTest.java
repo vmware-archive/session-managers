@@ -20,10 +20,12 @@ import org.junit.Before;
 import org.junit.Test;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -46,6 +48,30 @@ public final class JedisTemplateTest {
     }
 
     @Test
+    public void returnBrokenResourceException() throws Exception {
+        JedisConnectionException expected = new JedisConnectionException("test-message");
+        when(this.operation.invoke(this.jedis)).thenThrow(expected);
+        doThrow(new JedisConnectionException("test-message")).when(this.jedisPool).returnBrokenResource(this.jedis);
+
+        try {
+            this.jedisTemplate.withJedis(this.operation);
+            fail();
+        } catch (JedisConnectionException e) {
+            assertSame(expected, e);
+        }
+    }
+
+    @Test
+    public void returnResourceException() throws Exception {
+        when(this.operation.invoke(this.jedis)).thenReturn("test-value");
+        doThrow(new JedisConnectionException("test-message")).when(this.jedisPool).returnResource(this.jedis);
+
+        String result = this.jedisTemplate.withJedis(this.operation);
+
+        assertEquals("test-value", result);
+    }
+
+    @Test
     public void withJedis() throws Exception {
         when(this.operation.invoke(this.jedis)).thenReturn("test-value");
 
@@ -57,13 +83,14 @@ public final class JedisTemplateTest {
 
     @Test
     public void withJedisException() throws Exception {
-        when(this.operation.invoke(this.jedis)).thenThrow(new Exception());
+        JedisConnectionException expected = new JedisConnectionException("test-message");
+        when(this.operation.invoke(this.jedis)).thenThrow(expected);
 
         try {
             this.jedisTemplate.withJedis(this.operation);
             fail();
-        } catch (RuntimeException e) {
-            assertTrue(e.getCause() instanceof Exception);
+        } catch (JedisConnectionException e) {
+            assertSame(expected, e);
         }
 
         verify(this.jedisPool).returnBrokenResource(this.jedis);
@@ -71,13 +98,14 @@ public final class JedisTemplateTest {
 
     @Test
     public void withJedisResourceException() throws Exception {
-        when(this.jedisPool.getResource()).thenThrow(new RuntimeException());
+        JedisConnectionException expected = new JedisConnectionException("test-message");
+        when(this.jedisPool.getResource()).thenThrow(expected);
 
         try {
             this.jedisTemplate.withJedis(this.operation);
             fail();
-        } catch (RuntimeException e) {
-            assertTrue(e.getCause() instanceof RuntimeException);
+        } catch (JedisConnectionException e) {
+            assertSame(expected, e);
         }
 
         verify(this.jedisPool, times(0)).returnBrokenResource(this.jedis);

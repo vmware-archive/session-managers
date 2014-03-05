@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
+import static java.util.logging.Level.WARNING;
+
 final class StandardLifecycleSupport implements LifecycleSupport {
 
     private final List<LifecycleListener> lifecycleListeners = new ArrayList<>();
@@ -71,8 +73,7 @@ final class StandardLifecycleSupport implements LifecycleSupport {
             try {
                 lifecycleListener.lifecycleEvent(lifecycleEvent);
             } catch (RuntimeException e) {
-                this.logger.warning(String.format(
-                        "Exception encountered while notifying listener of lifecycle event: %s", e.getMessage()));
+                this.logger.log(WARNING, "Exception encountered while notifying listener of lifecycle event", e);
             }
         }
     }
