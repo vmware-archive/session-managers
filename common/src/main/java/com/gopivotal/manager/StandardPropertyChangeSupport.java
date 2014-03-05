@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
+import static java.util.logging.Level.WARNING;
+
 
 /**
  * The standard implementation of the {@link PropertyChangeSupport} interface
@@ -77,8 +79,7 @@ public final class StandardPropertyChangeSupport implements PropertyChangeSuppor
             try {
                 propertyChangeListener.propertyChange(propertyChangeEvent);
             } catch (RuntimeException e) {
-                this.logger.warning(String.format(
-                        "Exception encountered while notifying listener of property change: %s", e.getMessage()));
+                this.logger.log(WARNING, "Exception encountered while notifying listener of property change", e);
             }
         }
     }

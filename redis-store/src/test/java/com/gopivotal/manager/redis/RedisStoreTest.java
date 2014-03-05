@@ -37,6 +37,7 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Protocol;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.Transaction;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
@@ -87,6 +88,13 @@ public final class RedisStoreTest {
     }
 
     @Test
+    public void clearJedisConnectionException() {
+        when(this.jedisPool.getResource()).thenThrow(new JedisConnectionException("test-message"));
+
+        this.store.clear();
+    }
+
+    @Test
     public void connectionPoolSize() {
         this.store.setConnectionPoolSize(1);
 
@@ -126,6 +134,15 @@ public final class RedisStoreTest {
     }
 
     @Test
+    public void getSizeJedisConnectionException() {
+        when(this.jedisPool.getResource()).thenThrow(new JedisConnectionException("test-message"));
+
+        int result = this.store.getSize();
+
+        assertEquals(Integer.MIN_VALUE, result);
+    }
+
+    @Test
     public void host() {
         this.store.setHost("test-host");
 
@@ -161,6 +178,15 @@ public final class RedisStoreTest {
     }
 
     @Test
+    public void keysJedisConnectionException() {
+        when(this.jedisPool.getResource()).thenThrow(new JedisConnectionException("test-message"));
+
+        String[] result = this.store.keys();
+
+        assertArrayEquals(new String[0], result);
+    }
+
+    @Test
     public void load() throws IOException {
         Session session = new StandardSession(this.manager);
         session.setId("test-id");
@@ -174,6 +200,16 @@ public final class RedisStoreTest {
 
         assertEquals(session.getId(), result.getId());
         verify(this.transaction).exec();
+    }
+
+    @Test
+    public void loadJedisConnectionException() {
+        when(this.jedisPool.getResource()).thenThrow(new JedisConnectionException("test-message"));
+
+        this.store.setManager(this.manager);
+        Session result = this.store.load("test-id");
+
+        assertEquals(result.getId(), result.getId());
     }
 
     @Test
@@ -221,6 +257,13 @@ public final class RedisStoreTest {
     }
 
     @Test
+    public void removeJedisConnectionException() {
+        when(this.jedisPool.getResource()).thenThrow(new JedisConnectionException("test-message"));
+
+        this.store.remove("test-id");
+    }
+
+    @Test
     public void save() throws IOException {
         Session session = new StandardSession(this.manager);
         session.setId("test-id");
@@ -231,6 +274,17 @@ public final class RedisStoreTest {
                 (session));
         verify(this.transaction).sadd("sessions", "test-id");
         verify(this.transaction).exec();
+    }
+
+    @Test
+    public void saveJedisConnectionException() {
+        Session session = new StandardSession(this.manager);
+        session.setId("test-id");
+
+        when(this.jedisPool.getResource()).thenThrow(new JedisConnectionException("test-message"));
+
+        this.store.save(session);
+
     }
 
     @Before

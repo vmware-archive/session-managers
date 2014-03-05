@@ -18,10 +18,12 @@ package com.gopivotal.manager.redis;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import java.util.logging.Logger;
 
-@SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
+import static java.util.logging.Level.WARNING;
+
 final class JedisTemplate {
 
     private final JedisPool jedisPool;
@@ -37,9 +39,9 @@ final class JedisTemplate {
         try {
             jedis = this.jedisPool.getResource();
             return operation.invoke(jedis);
-        } catch (Exception e) {
+        } catch (JedisConnectionException e) {
             returnBrokenResourceQuietly(jedis);
-            throw new RuntimeException(e);
+            throw e;
         } finally {
             returnResourceQuietly(jedis);
         }
@@ -50,8 +52,7 @@ final class JedisTemplate {
             try {
                 this.jedisPool.returnBrokenResource(jedis);
             } catch (RuntimeException e) {
-                this.logger.warning(String.format("Exception encountered when returning broken Jedis resource: %s",
-                        e.getMessage()));
+                this.logger.log(WARNING, "Exception encountered when returning broken Jedis resource", e);
             }
         }
     }
@@ -60,8 +61,7 @@ final class JedisTemplate {
         try {
             this.jedisPool.returnResource(jedis);
         } catch (RuntimeException e) {
-            this.logger.warning(String.format("Exception encountered when returning Jedis resource: %s",
-                    e.getMessage()));
+            this.logger.log(WARNING, "Exception encountered when returning Jedis resource", e);
         }
     }
 
@@ -73,8 +73,7 @@ final class JedisTemplate {
          * @param jedis the {@link Jedis} instance to use
          * @return the return value of the operation
          */
-        @SuppressWarnings("PMD.SignatureDeclareThrowsException")
-        T invoke(Jedis jedis) throws Exception;
+        T invoke(Jedis jedis);
     }
 
 }

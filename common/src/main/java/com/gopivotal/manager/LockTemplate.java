@@ -21,6 +21,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
 
+import static java.util.logging.Level.SEVERE;
+
 /**
  * Utility methods that encapsulate {@link ReadWriteLock} idioms into closure-like methods.
  */
@@ -56,7 +58,7 @@ public final class LockTemplate {
         try {
             return operation.invoke();
         } catch (Exception e) {
-            this.logger.severe(e.getMessage());
+            this.logger.log(SEVERE, "Error while invoking read-locked operation", e);
             throw new RuntimeException(e);
         } finally {
             lock.unlock();
@@ -77,7 +79,7 @@ public final class LockTemplate {
         try {
             return operation.invoke();
         } catch (Exception e) {
-            this.logger.severe(e.getMessage());
+            this.logger.log(SEVERE, "Error while invoking write-locked operation", e);
             throw new RuntimeException(e);
         } finally {
             lock.unlock();
