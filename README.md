@@ -1,7 +1,7 @@
 # Pivotal Session Managers
 [![Build Status](https://travis-ci.org/gopivotal/session-managers.png?branch=master)](https://travis-ci.org/gopivotal/session-managers)
 
-This project contains implementations of the [Tomcat `PeristentManager` `Store`][m].
+This project contains implementations of the [Tomcat `PersistentManager` `Store`][m].
 
 ## `RedisStore`
 This implementation of the Tomcat `PersistentManager` `Store` persists data to [Redis][r].  Sessions are serialized from their Java representation and the resulting `byte[]` is stored, keyed by the `Session` id (i.e. `JSESSIONID`).
