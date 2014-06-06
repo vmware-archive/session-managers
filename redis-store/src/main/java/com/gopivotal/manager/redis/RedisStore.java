@@ -475,17 +475,15 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
                                 t.exec();
 
                                 return RedisStore.this.sessionSerializationUtils.deserialize(session.get());
-                            } catch (ClassNotFoundException | IOException e) {
-                                RedisStore.this.logger.log(SEVERE, String.format("Unable to load session %s. Empty " +
-                                        "session created.", id), e);
-                                return RedisStore.this.manager.createSession(id);
+                            } catch (ClassNotFoundException e) {
+                                return logAndCreateEmptySession(id, e);
+                            } catch (IOException e) {
+                            	return logAndCreateEmptySession(id, e);
                             }
                         }
                     });
                 } catch (JedisConnectionException e) {
-                    RedisStore.this.logger.log(SEVERE, String.format("Unable to load session %s. Empty session " +
-                            "created.", id), e);
-                    session = RedisStore.this.manager.createSession(id);
+                    session = logAndCreateEmptySession(id, e);
                 }
 
                 return session;
@@ -670,4 +668,9 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
         return uri.getUserInfo().split(":", 2)[1];
     }
 
+    private Session logAndCreateEmptySession(String id, Exception e) {
+    	RedisStore.this.logger.log(SEVERE, String.format("Unable to load session %s. Empty " +
+                "session created.", id), e);
+        return RedisStore.this.manager.createSession(id);
+    }
 }
