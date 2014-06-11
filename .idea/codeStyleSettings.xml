@@ -11,12 +11,6 @@
         </XML>
         <codeStyleSettings language="JAVA">
           <arrangement>
-            <groups>
-              <group>
-                <type>GETTERS_AND_SETTERS</type>
-                <order>KEEP</order>
-              </group>
-            </groups>
             <rules>
               <rule>
                 <match>

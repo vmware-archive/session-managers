@@ -27,8 +27,8 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="common" target="1.7" />
-      <module name="redis-store" target="1.7" />
+      <module name="common" target="1.6" />
+      <module name="redis-store" target="1.6" />
     </bytecodeTargetLevel>
   </component>
 </project>

@@ -475,17 +475,15 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
                                 t.exec();
 
                                 return RedisStore.this.sessionSerializationUtils.deserialize(session.get());
-                            } catch (ClassNotFoundException | IOException e) {
-                                RedisStore.this.logger.log(SEVERE, String.format("Unable to load session %s. Empty " +
-                                        "session created.", id), e);
-                                return RedisStore.this.manager.createSession(id);
+                            } catch (ClassNotFoundException e) {
+                                return logAndCreateEmptySession(id, e);
+                            } catch (IOException e) {
+                                return logAndCreateEmptySession(id, e);
                             }
                         }
                     });
                 } catch (JedisConnectionException e) {
-                    RedisStore.this.logger.log(SEVERE, String.format("Unable to load session %s. Empty session " +
-                            "created.", id), e);
-                    session = RedisStore.this.manager.createSession(id);
+                    session = logAndCreateEmptySession(id, e);
                 }
 
                 return session;
@@ -533,40 +531,40 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
     public void save(final Session session) {
         this.lockTemplate.withReadLock(new LockTemplate.LockedOperation<Void>() {
 
-            @Override
-            public Void invoke() {
-                final String sessionId = session.getId();
+                                           @Override
+                                           public Void invoke() {
+                                               final String sessionId = session.getId();
 
-                try {
-                    RedisStore.this.jedisTemplate.withJedis(new JedisTemplate.JedisOperation<Void>() {
+                                               try {
+                                                   RedisStore.this.jedisTemplate.withJedis(new JedisTemplate.JedisOperation<Void>() {
 
-                        @Override
-                        public Void invoke(Jedis jedis) {
-                            try {
-                                Transaction t = jedis.multi();
-                                t.set(session.getId().getBytes(Protocol.CHARSET), RedisStore.this.sessionSerializationUtils
-                                        .serialize(session));
-                                t.sadd(SESSIONS_KEY, sessionId);
-                                t.exec();
-                            } catch (IOException e) {
-                                RedisStore.this.logger.log(SEVERE, String.format("Unable to save session %s",
-                                        sessionId), e);
-                            }
+                                                                                               @Override
+                                                                                               public Void invoke(Jedis jedis) {
+                                                                                                   try {
+                                                                                                       Transaction t = jedis.multi();
+                                                                                                       t.set(session.getId().getBytes(Protocol.CHARSET), RedisStore.this.sessionSerializationUtils
+                                                                                                               .serialize(session));
+                                                                                                       t.sadd(SESSIONS_KEY, sessionId);
+                                                                                                       t.exec();
+                                                                                                   } catch (IOException e) {
+                                                                                                       RedisStore.this.logger.log(SEVERE, String.format("Unable to save session %s",
+                                                                                                               sessionId), e);
+                                                                                                   }
 
-                            return null;
-                        }
+                                                                                                   return null;
+                                                                                               }
 
-                    }
+                                                                                           }
 
-                    );
-                } catch (JedisConnectionException e) {
-                    RedisStore.this.logger.log(SEVERE, String.format("Unable to persist session %s", sessionId), e);
-                }
+                                                   );
+                                               } catch (JedisConnectionException e) {
+                                                   RedisStore.this.logger.log(SEVERE, String.format("Unable to persist session %s", sessionId), e);
+                                               }
 
-                return null;
-            }
+                                               return null;
+                                           }
 
-        }
+                                       }
 
         );
     }
@@ -670,4 +668,8 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
         return uri.getUserInfo().split(":", 2)[1];
     }
 
+    private Session logAndCreateEmptySession(String id, Exception e) {
+        RedisStore.this.logger.log(SEVERE, String.format("Unable to load session %s. Empty session created.", id), e);
+        return RedisStore.this.manager.createSession(id);
+    }
 }
