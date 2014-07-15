@@ -357,6 +357,17 @@ public final class RedisStoreTest {
         verify(this.propertyChangeSupport).notify("database", 0, 7);
     }
 
+    @Test
+    public void uriWithoutCredentials() {
+        this.store.setUri("redis://test-host:1234/7");
+
+        assertEquals("redis://test-host:1234/7", this.store.getUri());
+        verify(this.propertyChangeSupport).notify("host", "localhost", "test-host");
+        verify(this.propertyChangeSupport).notify("port", 6379, 1234);
+        verify(this.propertyChangeSupport).notify("password", null, null);
+        verify(this.propertyChangeSupport).notify("database", 0, 7);
+    }
+
 
     private static class StubTransaction extends Transaction {
 
