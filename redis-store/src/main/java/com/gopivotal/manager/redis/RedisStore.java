@@ -397,7 +397,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
         return this.lockTemplate.withReadLock(new LockTemplate.LockedOperation<String>() {
             @Override
             public String invoke() {
-                return String.format("redis://:%s@%s:%d/%d", RedisStore.this.password, RedisStore.this.host,
+                return String.format("redis://%s%s:%d/%d", getUserInfo(), RedisStore.this.host,
                         RedisStore.this.port, RedisStore.this.database);
             }
         });
@@ -660,16 +660,27 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
                 getClass().getSimpleName());
     }
 
-    private int parseDatabase(URI uri) {
-        return Integer.parseInt(uri.getPath().split("/", 2)[1]);
-    }
-
-    private String parsePassword(URI uri) {
-        return uri.getUserInfo().split(":", 2)[1];
+    private String getUserInfo() {
+        String password = RedisStore.this.password;
+        return password == null ? "" : String.format(":%s@", password);
     }
 
     private Session logAndCreateEmptySession(String id, Exception e) {
         RedisStore.this.logger.log(SEVERE, String.format("Unable to load session %s. Empty session created.", id), e);
         return RedisStore.this.manager.createSession(id);
+    }
+
+    private int parseDatabase(URI uri) {
+        return Integer.parseInt(uri.getPath().split("/", 2)[1]);
+    }
+
+    private String parsePassword(URI uri) {
+        String userInfo = uri.getUserInfo();
+
+        if (userInfo == null) {
+            return null;
+        }
+
+        return userInfo.split(":", 2)[1];
     }
 }

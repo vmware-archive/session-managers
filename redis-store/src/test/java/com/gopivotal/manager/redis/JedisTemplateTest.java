@@ -59,6 +59,8 @@ public final class JedisTemplateTest {
         } catch (JedisConnectionException e) {
             assertSame(expected, e);
         }
+
+        verify(this.jedisPool).returnResource(this.jedis);
     }
 
     @Test
@@ -94,6 +96,7 @@ public final class JedisTemplateTest {
         }
 
         verify(this.jedisPool).returnBrokenResource(this.jedis);
+        verify(this.jedisPool).returnResource(this.jedis);
     }
 
     @Test
@@ -108,6 +111,7 @@ public final class JedisTemplateTest {
             assertSame(expected, e);
         }
 
-        verify(this.jedisPool, times(0)).returnBrokenResource(this.jedis);
+        verify(this.jedisPool, times(0)).returnBrokenResource(null);
+        verify(this.jedisPool, times(0)).returnResource(null);
     }
 }
