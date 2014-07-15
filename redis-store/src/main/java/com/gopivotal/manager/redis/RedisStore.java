@@ -661,8 +661,8 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
     }
 
     private String getUserInfo() {
-        String password = RedisStore.this.password;
-        return password == null ? "" : String.format(":%s@", password);
+        String candidate = RedisStore.this.password;
+        return candidate == null ? "" : String.format(":%s@", candidate);
     }
 
     private Session logAndCreateEmptySession(String id, Exception e) {
