@@ -2,6 +2,6 @@
 
 set -e -x
 
-pushd cf-java-client
+pushd session-managers
   ./mvnw -Dmaven.test.skip=true deploy
 popd
