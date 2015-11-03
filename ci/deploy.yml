@@ -3,7 +3,7 @@ platform: linux
 image: docker:///java#8-jdk
 
 inputs:
-- name: cf-java-client
+- name: session-managers
 
 run:
-  path: cf-java-client/ci/deploy.sh
+  path: session-managers/ci/deploy.sh
