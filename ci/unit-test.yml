@@ -1,0 +1,8 @@
+---
+platform: linux
+
+inputs:
+- name: cf-java-client
+
+run:
+  path: cf-java-client/ci/unit-test.sh

@@ -1,6 +1,4 @@
 # Pivotal Session Managers
-[![Build Status](https://travis-ci.org/gopivotal/session-managers.svg?branch=master)](https://travis-ci.org/gopivotal/session-managers)
-
 This project contains implementations of the [Tomcat `PersistentManager` `Store`][m].
 
 ## `RedisStore`
