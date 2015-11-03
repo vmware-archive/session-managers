@@ -2,7 +2,7 @@
 platform: linux
 
 inputs:
-- name: cf-java-client
+- name: session-managers
 
 run:
-  path: cf-java-client/ci/unit-test.sh
+  path: session-managers/ci/unit-test.sh
