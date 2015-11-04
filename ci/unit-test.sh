@@ -3,5 +3,5 @@
 set -e -x
 
 pushd session-managers
-  ./mvnw package
+  ./mvnw test
 popd
