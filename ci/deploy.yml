@@ -1,6 +1,6 @@
 ---
 platform: linux
-image: docker:///java#8-jdk
+image: docker:///java#7-jdk
 
 inputs:
 - name: session-managers
