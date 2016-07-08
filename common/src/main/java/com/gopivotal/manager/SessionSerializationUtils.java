@@ -63,8 +63,6 @@ public final class SessionSerializationUtils {
         try {
             bytes = new ByteArrayInputStream(session);
             in = new ObjectInputStream(bytes) {
-
-         
               @Override
               protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
                 try {
@@ -73,7 +71,6 @@ public final class SessionSerializationUtils {
                   return super.resolveClass(desc);
                 }
               }
-              
             };
 
             StandardSession standardSession = (StandardSession) this.manager.createEmptySession();
