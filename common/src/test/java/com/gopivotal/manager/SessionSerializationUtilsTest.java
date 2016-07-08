@@ -16,6 +16,12 @@
 
 package com.gopivotal.manager;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
+
+import java.io.IOException;
+
 import org.apache.catalina.Context;
 import org.apache.catalina.Manager;
 import org.apache.catalina.Session;
@@ -23,11 +29,6 @@ import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.session.StandardManager;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.io.IOException;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 public final class SessionSerializationUtilsTest {
 
@@ -48,9 +49,19 @@ public final class SessionSerializationUtilsTest {
         initial.setValid(true);
         initial.getSession().setAttribute("test-key", "test-value");
 
+        SampleSessionObject obj = new SampleSessionObject();
+        obj.setSampleField("field-set");
+        obj.setNonSerializableField(40L);
+
+        initial.getSession().setAttribute("test-key-2", obj);
+
         Session result = this.sessionSerializationUtils.deserialize(this.sessionSerializationUtils.serialize(initial));
 
         assertEquals("test-value", result.getSession().getAttribute("test-key"));
+
+        SampleSessionObject obj2 = (SampleSessionObject) result.getSession().getAttribute("test-key-2");
+        assertEquals("field-set", obj2.getSampleField());
+        assertNotEquals(40L, obj2.getNonSerializableField());
     }
 
     @Test
