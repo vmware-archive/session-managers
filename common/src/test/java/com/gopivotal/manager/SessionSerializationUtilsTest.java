@@ -39,7 +39,7 @@ public final class SessionSerializationUtilsTest {
 
     @Before
     public void manager() throws Exception {
-        this.manager.setContainer(this.context);
+        this.manager.setContext(this.context);
     }
 
     @Test

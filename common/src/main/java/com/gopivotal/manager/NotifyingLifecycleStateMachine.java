@@ -26,8 +26,6 @@ import static org.apache.catalina.LifecycleState.DESTROYING;
 import static org.apache.catalina.LifecycleState.FAILED;
 import static org.apache.catalina.LifecycleState.INITIALIZED;
 import static org.apache.catalina.LifecycleState.INITIALIZING;
-import static org.apache.catalina.LifecycleState.MUST_DESTROY;
-import static org.apache.catalina.LifecycleState.MUST_STOP;
 import static org.apache.catalina.LifecycleState.NEW;
 import static org.apache.catalina.LifecycleState.STARTED;
 import static org.apache.catalina.LifecycleState.STARTING;
@@ -83,17 +81,13 @@ final class NotifyingLifecycleStateMachine implements LifecycleStateMachine {
             } else if (STARTING == this.lifecycleState) {
                 transition(lifecycleState, STARTED);
             } else if (STARTED == this.lifecycleState) {
-                transition(lifecycleState, MUST_STOP, STOPPING_PREP);
-            } else if (MUST_STOP == this.lifecycleState) {
                 transition(lifecycleState, STOPPING_PREP);
             } else if (STOPPING_PREP == this.lifecycleState) {
                 transition(lifecycleState, STOPPING);
             } else if (STOPPING == this.lifecycleState) {
                 transition(lifecycleState, STOPPED);
             } else if (STOPPED == this.lifecycleState) {
-                transition(lifecycleState, STARTING_PREP, MUST_DESTROY, DESTROYING);
-            } else if (MUST_DESTROY == this.lifecycleState) {
-                transition(lifecycleState, DESTROYING);
+                transition(lifecycleState, STARTING_PREP, DESTROYING);
             } else if (DESTROYING == this.lifecycleState) {
                 transition(lifecycleState, DESTROYED);
             } else if (DESTROYED == this.lifecycleState) {

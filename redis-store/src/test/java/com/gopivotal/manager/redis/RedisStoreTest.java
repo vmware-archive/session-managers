@@ -116,11 +116,6 @@ public final class RedisStoreTest {
     }
 
     @Test
-    public void getInfo() {
-        assertEquals("RedisStore/1.0", this.store.getInfo());
-    }
-
-    @Test
     public void getSize() throws IOException {
         Response<Long> response = new Response<Long>(BuilderFactory.LONG);
         response.set((long) Integer.MAX_VALUE);
@@ -154,7 +149,7 @@ public final class RedisStoreTest {
     public void initInternal() {
         SessionFlushValve valve = new SessionFlushValve();
 
-        StandardContext context = (StandardContext) this.manager.getContainer();
+        StandardContext context = (StandardContext) this.manager.getContext();
         context.addValve(new RemoteIpValve());
         context.addValve(valve);
         this.store.setManager(this.manager);
@@ -298,7 +293,7 @@ public final class RedisStoreTest {
         Context context = new StandardContext();
         Host host = new StandardHost();
 
-        this.manager.setContainer(context);
+        this.manager.setContext(context);
         context.setName("test-context-name");
         context.setParent(host);
         host.setName("test-host-name");

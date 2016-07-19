@@ -21,7 +21,6 @@ import org.apache.catalina.Container;
 import org.apache.catalina.Session;
 import org.apache.catalina.Store;
 import org.apache.catalina.Valve;
-import org.apache.catalina.comet.CometEvent;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 
@@ -29,12 +28,10 @@ import javax.servlet.ServletException;
 import java.io.IOException;
 
 /**
- * An implementation fo the {@link Valve} interface that flushes any existing sessions before the response is returned.
+ * An implementation for the {@link Valve} interface that flushes any existing sessions before the response is returned.
  */
 public final class SessionFlushValve extends AbstractLifecycle implements Contained, SessionFlushValveManagement,
         Valve {
-
-    private static final String INFO = "SessionFlushValve/1.0";
 
     private final JmxSupport jmxSupport;
 
@@ -62,10 +59,6 @@ public final class SessionFlushValve extends AbstractLifecycle implements Contai
     }
 
     @Override
-    public void event(Request request, Response response, CometEvent event) {
-    }
-
-    @Override
     public Container getContainer() {
         return this.lockTemplate.withReadLock(new LockTemplate.LockedOperation<Container>() {
 
@@ -88,11 +81,6 @@ public final class SessionFlushValve extends AbstractLifecycle implements Contai
             }
 
         });
-    }
-
-    @Override
-    public String getInfo() {
-        return INFO;
     }
 
     @Override

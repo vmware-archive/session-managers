@@ -25,8 +25,6 @@ import static org.apache.catalina.LifecycleState.DESTROYING;
 import static org.apache.catalina.LifecycleState.FAILED;
 import static org.apache.catalina.LifecycleState.INITIALIZED;
 import static org.apache.catalina.LifecycleState.INITIALIZING;
-import static org.apache.catalina.LifecycleState.MUST_DESTROY;
-import static org.apache.catalina.LifecycleState.MUST_STOP;
 import static org.apache.catalina.LifecycleState.NEW;
 import static org.apache.catalina.LifecycleState.STARTED;
 import static org.apache.catalina.LifecycleState.STARTING;
@@ -218,81 +216,6 @@ public final class NotifyingLifecycleStateMachineTest {
     }
 
     @Test
-    public void transitionMustDestroyDestroying() throws LifecycleException {
-        this.lifecycleStateMachine.transition(INITIALIZING);
-        this.lifecycleStateMachine.transition(INITIALIZED);
-        this.lifecycleStateMachine.transition(STARTING_PREP);
-        this.lifecycleStateMachine.transition(STARTING);
-        this.lifecycleStateMachine.transition(STARTED);
-        this.lifecycleStateMachine.transition(STOPPING_PREP);
-        this.lifecycleStateMachine.transition(STOPPING);
-        this.lifecycleStateMachine.transition(STOPPED);
-        this.lifecycleStateMachine.transition(MUST_DESTROY);
-        assertTransition(DESTROYING);
-    }
-
-    @Test
-    public void transitionMustDestroyFailed() throws LifecycleException {
-        this.lifecycleStateMachine.transition(INITIALIZING);
-        this.lifecycleStateMachine.transition(INITIALIZED);
-        this.lifecycleStateMachine.transition(STARTING_PREP);
-        this.lifecycleStateMachine.transition(STARTING);
-        this.lifecycleStateMachine.transition(STARTED);
-        this.lifecycleStateMachine.transition(STOPPING_PREP);
-        this.lifecycleStateMachine.transition(STOPPING);
-        this.lifecycleStateMachine.transition(STOPPED);
-        this.lifecycleStateMachine.transition(MUST_DESTROY);
-        assertTransition(FAILED);
-    }
-
-    @Test(expected = LifecycleException.class)
-    public void transitionMustDestroyIllegal() throws LifecycleException {
-        this.lifecycleStateMachine.transition(INITIALIZING);
-        this.lifecycleStateMachine.transition(INITIALIZED);
-        this.lifecycleStateMachine.transition(STARTING_PREP);
-        this.lifecycleStateMachine.transition(STARTING);
-        this.lifecycleStateMachine.transition(STARTED);
-        this.lifecycleStateMachine.transition(STOPPING_PREP);
-        this.lifecycleStateMachine.transition(STOPPING);
-        this.lifecycleStateMachine.transition(STOPPED);
-        this.lifecycleStateMachine.transition(MUST_DESTROY);
-        this.lifecycleStateMachine.transition(NEW);
-    }
-
-    @Test
-    public void transitionMustStopFailed() throws LifecycleException {
-        this.lifecycleStateMachine.transition(INITIALIZING);
-        this.lifecycleStateMachine.transition(INITIALIZED);
-        this.lifecycleStateMachine.transition(STARTING_PREP);
-        this.lifecycleStateMachine.transition(STARTING);
-        this.lifecycleStateMachine.transition(STARTED);
-        this.lifecycleStateMachine.transition(MUST_STOP);
-        assertTransition(FAILED);
-    }
-
-    @Test(expected = LifecycleException.class)
-    public void transitionMustStopIllegal() throws LifecycleException {
-        this.lifecycleStateMachine.transition(INITIALIZING);
-        this.lifecycleStateMachine.transition(INITIALIZED);
-        this.lifecycleStateMachine.transition(STARTING_PREP);
-        this.lifecycleStateMachine.transition(STARTING);
-        this.lifecycleStateMachine.transition(STARTED);
-        this.lifecycleStateMachine.transition(MUST_STOP);
-        this.lifecycleStateMachine.transition(NEW);
-    }
-
-    @Test
-    public void transitionMustStopStoppingPrep() throws LifecycleException {
-        this.lifecycleStateMachine.transition(INITIALIZING);
-        this.lifecycleStateMachine.transition(INITIALIZED);
-        this.lifecycleStateMachine.transition(STARTING_PREP);
-        this.lifecycleStateMachine.transition(STARTING);
-        this.lifecycleStateMachine.transition(STARTED);
-        this.lifecycleStateMachine.transition(MUST_STOP);
-        assertTransition(STOPPING_PREP);
-    }
-
-    @Test
     public void transitionNewDestroying() throws LifecycleException {
         assertTransition(DESTROYING);
     }
@@ -340,16 +263,6 @@ public final class NotifyingLifecycleStateMachineTest {
         this.lifecycleStateMachine.transition(STARTING);
         this.lifecycleStateMachine.transition(STARTED);
         this.lifecycleStateMachine.transition(NEW);
-    }
-
-    @Test
-    public void transitionStartedMustStop() throws LifecycleException {
-        this.lifecycleStateMachine.transition(INITIALIZING);
-        this.lifecycleStateMachine.transition(INITIALIZED);
-        this.lifecycleStateMachine.transition(STARTING_PREP);
-        this.lifecycleStateMachine.transition(STARTING);
-        this.lifecycleStateMachine.transition(STARTED);
-        assertTransition(MUST_STOP);
     }
 
     @Test
@@ -450,19 +363,6 @@ public final class NotifyingLifecycleStateMachineTest {
         this.lifecycleStateMachine.transition(STOPPING);
         this.lifecycleStateMachine.transition(STOPPED);
         this.lifecycleStateMachine.transition(NEW);
-    }
-
-    @Test
-    public void transitionStoppedMustDestroy() throws LifecycleException {
-        this.lifecycleStateMachine.transition(INITIALIZING);
-        this.lifecycleStateMachine.transition(INITIALIZED);
-        this.lifecycleStateMachine.transition(STARTING_PREP);
-        this.lifecycleStateMachine.transition(STARTING);
-        this.lifecycleStateMachine.transition(STARTED);
-        this.lifecycleStateMachine.transition(STOPPING_PREP);
-        this.lifecycleStateMachine.transition(STOPPING);
-        this.lifecycleStateMachine.transition(STOPPED);
-        assertTransition(MUST_DESTROY);
     }
 
     @Test

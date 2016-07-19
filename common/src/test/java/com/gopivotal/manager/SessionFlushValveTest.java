@@ -29,7 +29,6 @@ import org.junit.Test;
 import javax.servlet.ServletException;
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.mock;
@@ -65,16 +64,6 @@ public final class SessionFlushValveTest {
         this.valve.setContainer(context);
 
         assertSame(context, this.valve.getContainer());
-    }
-
-    @Test
-    public void event() {
-        this.valve.event(null, null, null);
-    }
-
-    @Test
-    public void getInfo() {
-        assertEquals("SessionFlushValve/1.0", this.valve.getInfo());
     }
 
     @Before

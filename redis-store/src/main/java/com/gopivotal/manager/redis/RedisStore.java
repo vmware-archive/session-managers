@@ -50,8 +50,6 @@ import static java.util.logging.Level.SEVERE;
  */
 public final class RedisStore extends AbstractLifecycle implements RedisStoreManagement, Store {
 
-    private static final String INFO = "RedisStore/1.0";
-
     private static final String SESSIONS_KEY = "sessions";
 
     private final JmxSupport jmxSupport;
@@ -232,11 +230,6 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
             }
 
         });
-    }
-
-    @Override
-    public String getInfo() {
-        return INFO;
     }
 
     @Override
@@ -575,7 +568,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
             @Override
             public Void invoke() {
-                for (Valve valve : RedisStore.this.manager.getContainer().getPipeline().getValves()) {
+                for (Valve valve : RedisStore.this.manager.getContext().getPipeline().getValves()) {
                     if (valve instanceof SessionFlushValve) {
                         RedisStore.this.logger.fine(String.format("Setting '%s' as the store for '%s'", this, valve));
                         ((SessionFlushValve) valve).setStore(RedisStore.this);
@@ -648,13 +641,13 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
     }
 
     private String getContext() {
-        String name = this.manager.getContainer().getName();
+        String name = this.manager.getContext().getName();
         return name.startsWith("/") ? name : String.format("/%s", name);
     }
 
     private String getObjectName() {
         String contextPath = getContext();
-        String hostName = this.manager.getContainer().getParent().getName();
+        String hostName = this.manager.getContext().getParent().getName();
 
         return String.format("Catalina:type=Store,context=%s,host=%s,name=%s", contextPath, hostName,
                 getClass().getSimpleName());
