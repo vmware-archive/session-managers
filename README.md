@@ -4,7 +4,10 @@ This project contains implementations of the [Tomcat `PersistentManager` `Store`
 ## `RedisStore`
 This implementation of the Tomcat `PersistentManager` `Store` persists data to [Redis][r].  Sessions are serialized from their Java representation and the resulting `byte[]` is stored, keyed by the `Session` id (i.e. `JSESSIONID`).
 
-It works with both Tomcat 7 and 8, and with Java 7 and 8.
+v1.2.0.RELEASE -  works with both Tomcat 7 and 8, and with Java 6, 7 and 8.
+v1.3.0.RELEASE - works with Tomcat 8.5, and with Java 7 and 8. 
+
+
 
 ### Usage
 To use the Store, edit either the Tomcat instance's or application's `context.xml`, adding the following, `<Valve />`, `<Manager />`, and `<Store />` definitions.
