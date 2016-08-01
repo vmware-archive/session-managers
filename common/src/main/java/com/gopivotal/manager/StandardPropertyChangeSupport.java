@@ -34,7 +34,7 @@ public final class StandardPropertyChangeSupport implements PropertyChangeSuppor
 
     private final Object monitor = new Object();
 
-    private final List<PropertyChangeListener> propertyChangeListeners = new ArrayList<PropertyChangeListener>();
+    private final List<PropertyChangeListener> propertyChangeListeners = new ArrayList<>();
 
     private final Object source;
 

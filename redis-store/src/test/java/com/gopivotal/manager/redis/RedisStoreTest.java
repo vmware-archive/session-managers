@@ -76,7 +76,7 @@ public final class RedisStoreTest {
 
     @Test
     public void clear() throws IOException {
-        Set<String> sessionIds = new HashSet<String>();
+        Set<String> sessionIds = new HashSet<>();
         sessionIds.add("test-id");
         when(this.jedis.smembers("sessions")).thenReturn(sessionIds);
 
@@ -117,7 +117,7 @@ public final class RedisStoreTest {
 
     @Test
     public void getSize() throws IOException {
-        Response<Long> response = new Response<Long>(BuilderFactory.LONG);
+        Response<Long> response = new Response<>(BuilderFactory.LONG);
         response.set((long) Integer.MAX_VALUE);
 
         when(this.transaction.scard("sessions")).thenReturn(response);
@@ -161,7 +161,7 @@ public final class RedisStoreTest {
 
     @Test
     public void keys() throws IOException {
-        Response<Set<String>> response = new Response<Set<String>>(BuilderFactory.STRING_SET);
+        Response<Set<String>> response = new Response<>(BuilderFactory.STRING_SET);
         response.set(Arrays.asList("test-id".getBytes(Protocol.CHARSET)));
 
         when(this.transaction.smembers("sessions")).thenReturn(response);
@@ -186,7 +186,7 @@ public final class RedisStoreTest {
         Session session = new StandardSession(this.manager);
         session.setId("test-id");
 
-        Response<byte[]> response = new Response<byte[]>(BuilderFactory.BYTE_ARRAY);
+        Response<byte[]> response = new Response<>(BuilderFactory.BYTE_ARRAY);
         response.set(this.sessionSerializationUtils.serialize(session));
 
         when(this.transaction.get("test-id".getBytes(Protocol.CHARSET))).thenReturn(response);

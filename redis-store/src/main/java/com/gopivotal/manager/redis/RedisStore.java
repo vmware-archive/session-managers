@@ -454,15 +454,17 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
                                 t.exec();
 
                                 return RedisStore.this.sessionSerializationUtils.deserialize(session.get());
-                            } catch (ClassNotFoundException e) {
-                                return logAndCreateEmptySession(id, e);
-                            } catch (IOException e) {
-                                return logAndCreateEmptySession(id, e);
+                            } catch (ClassNotFoundException | IOException e) {
+                                RedisStore.this.logger.log(SEVERE, String.format("Unable to load session %s. Empty " +
+                                            "session created.", id), e);
+                                return RedisStore.this.manager.createSession(id);
                             }
                         }
                     });
                 } catch (JedisConnectionException e) {
-                    session = logAndCreateEmptySession(id, e);
+                    RedisStore.this.logger.log(SEVERE, String.format("Unable to load session %s. Empty session " +
+                                "created.", id), e);
+                    session = RedisStore.this.manager.createSession(id);
                 }
 
                 return session;

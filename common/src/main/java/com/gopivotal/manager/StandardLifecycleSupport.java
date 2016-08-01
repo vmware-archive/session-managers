@@ -28,7 +28,7 @@ import static java.util.logging.Level.WARNING;
 
 final class StandardLifecycleSupport implements LifecycleSupport {
 
-    private final List<LifecycleListener> lifecycleListeners = new ArrayList<LifecycleListener>();
+    private final List<LifecycleListener> lifecycleListeners = new ArrayList<>();
 
     private final Logger logger = Logger.getLogger(this.getClass().getName());
 
