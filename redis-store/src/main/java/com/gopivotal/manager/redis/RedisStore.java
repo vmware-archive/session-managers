@@ -51,33 +51,19 @@ import static java.util.logging.Level.SEVERE;
 public final class RedisStore extends AbstractLifecycle implements RedisStoreManagement, Store {
 
     private static final String SESSIONS_KEY = "sessions";
-
     private final JmxSupport jmxSupport;
-
     private final LockTemplate lockTemplate = new LockTemplate();
-
     private final Logger logger = Logger.getLogger(this.getClass().getName());
-
     private final PropertyChangeSupport propertyChangeSupport;
-
     private volatile int connectionPoolSize = GenericKeyedObjectPoolConfig.DEFAULT_MAX_TOTAL;
-
     private volatile int database = Protocol.DEFAULT_DATABASE;
-
     private volatile String host = "localhost";
-
     private volatile JedisPool jedisPool;
-
     private volatile JedisTemplate jedisTemplate;
-
     private volatile Manager manager;
-
     private volatile String password;
-
     private volatile int port = Protocol.DEFAULT_PORT;
-
     private volatile SessionSerializationUtils sessionSerializationUtils;
-
     private volatile int timeout = Protocol.DEFAULT_TIMEOUT;
 
     /**
@@ -92,7 +78,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
     }
 
     RedisStore(JedisPool jedisPool, JmxSupport jmxSupport, PropertyChangeSupport propertyChangeSupport,
-               SessionSerializationUtils sessionSerializationUtils) {
+            SessionSerializationUtils sessionSerializationUtils) {
         this.jedisPool = jedisPool;
         this.jedisTemplate = new JedisTemplate(this.jedisPool);
         this.jmxSupport = jmxSupport;
@@ -524,40 +510,40 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
     public void save(final Session session) {
         this.lockTemplate.withReadLock(new LockTemplate.LockedOperation<Void>() {
 
-                                           @Override
-                                           public Void invoke() {
-                                               final String sessionId = session.getId();
+            @Override
+            public Void invoke() {
+                final String sessionId = session.getId();
 
-                                               try {
-                                                   RedisStore.this.jedisTemplate.withJedis(new JedisTemplate.JedisOperation<Void>() {
+                try {
+                    RedisStore.this.jedisTemplate.withJedis(new JedisTemplate.JedisOperation<Void>() {
 
-                                                                                               @Override
-                                                                                               public Void invoke(Jedis jedis) {
-                                                                                                   try {
-                                                                                                       Transaction t = jedis.multi();
-                                                                                                       t.set(session.getId().getBytes(Protocol.CHARSET), RedisStore.this.sessionSerializationUtils
-                                                                                                               .serialize(session));
-                                                                                                       t.sadd(SESSIONS_KEY, sessionId);
-                                                                                                       t.exec();
-                                                                                                   } catch (IOException e) {
-                                                                                                       RedisStore.this.logger.log(SEVERE, String.format("Unable to save session %s",
-                                                                                                               sessionId), e);
-                                                                                                   }
+                        @Override
+                        public Void invoke(Jedis jedis) {
+                            try {
+                                Transaction t = jedis.multi();
+                                t.set(session.getId().getBytes(Protocol.CHARSET), RedisStore.this.sessionSerializationUtils
+                                        .serialize(session));
+                                t.sadd(SESSIONS_KEY, sessionId);
+                                t.exec();
+                            } catch (IOException e) {
+                                RedisStore.this.logger.log(SEVERE, String.format("Unable to save session %s",
+                                            sessionId), e);
+                            }
 
-                                                                                                   return null;
-                                                                                               }
+                            return null;
+                        }
 
-                                                                                           }
+                    }
 
-                                                   );
-                                               } catch (JedisConnectionException e) {
-                                                   RedisStore.this.logger.log(SEVERE, String.format("Unable to persist session %s", sessionId), e);
-                                               }
+                    );
+                } catch (JedisConnectionException e) {
+                    RedisStore.this.logger.log(SEVERE, String.format("Unable to persist session %s", sessionId), e);
+                }
 
-                                               return null;
-                                           }
+                return null;
+            }
 
-                                       }
+        }
 
         );
     }
@@ -627,7 +613,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
     private void connect() {
         this.logger.info(String.format("Connecting to Redis Server at redis://%s:%d/%d", this.host, this.port,
-                this.database));
+                    this.database));
 
         this.jedisTemplate.withJedis(new JedisTemplate.JedisOperation<Void>() {
 
