@@ -24,6 +24,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
 
+import org.apache.catalina.Context;
+import org.apache.catalina.Globals;
 import org.apache.catalina.Manager;
 import org.apache.catalina.Session;
 import org.apache.catalina.session.StandardSession;
@@ -59,6 +61,8 @@ public final class SessionSerializationUtils {
 
         ByteArrayInputStream bytes = null;
         ObjectInputStream in = null;
+        Context context = this.manager.getContext();
+        ClassLoader oldThreadContextCL = context.bind(Globals.IS_SECURITY_ENABLED, null);
 
         try {
             bytes = new ByteArrayInputStream(session);
@@ -79,6 +83,7 @@ public final class SessionSerializationUtils {
             return standardSession;
         } finally {
             closeQuietly(in, bytes);
+            context.unbind(Globals.IS_SECURITY_ENABLED, oldThreadContextCL);
         }
     }
 
