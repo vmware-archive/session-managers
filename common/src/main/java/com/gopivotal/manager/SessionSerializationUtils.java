@@ -16,10 +16,14 @@
 
 package com.gopivotal.manager;
 
+import org.apache.catalina.Container;
+import org.apache.catalina.Context;
+import org.apache.catalina.Loader;
+
 import org.apache.catalina.Manager;
 import org.apache.catalina.Session;
 import org.apache.catalina.session.StandardSession;
-
+import org.apache.catalina.util.CustomObjectInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -59,9 +63,25 @@ public final class SessionSerializationUtils {
         ByteArrayInputStream bytes = null;
         ObjectInputStream in = null;
 
+        ClassLoader oldThreadContextCL = null;
         try {
             bytes = new ByteArrayInputStream(session);
-            in = new ObjectInputStream(bytes);
+            Loader loader = null;
+            ClassLoader classLoader = null;
+            oldThreadContextCL = Thread.currentThread().getContextClassLoader();
+            Container container = manager.getContainer();
+            if (container != null) {
+              loader = container.getLoader();
+            }
+            if (loader != null) {
+              classLoader = loader.getClassLoader();
+            }
+            if (classLoader != null) {
+              Thread.currentThread().setContextClassLoader(classLoader);
+              in = new CustomObjectInputStream(bytes, classLoader);
+            } else {
+              in = new ObjectInputStream(bytes);
+            }
 
             StandardSession standardSession = (StandardSession) this.manager.createEmptySession();
             standardSession.readObjectData(in);
@@ -69,6 +89,9 @@ public final class SessionSerializationUtils {
             return standardSession;
         } finally {
             closeQuietly(in, bytes);
+            if (oldThreadContextCL != null) {
+              Thread.currentThread().setContextClassLoader(oldThreadContextCL);
+            }
         }
     }
 
