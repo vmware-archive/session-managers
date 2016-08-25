@@ -1,13 +1,11 @@
 # Pivotal Session Managers
-This project contains implementations of the [Tomcat `PersistentManager` `Store`][m].
+This project contains implementations of the [Tomcat `PersistentManager` Store][m].
 
 ## `RedisStore`
 This implementation of the Tomcat `PersistentManager` `Store` persists data to [Redis][r].  Sessions are serialized from their Java representation and the resulting `byte[]` is stored, keyed by the `Session` id (i.e. `JSESSIONID`).
 
-v1.2.0.RELEASE -  works with both Tomcat 7 and 8, and with Java 6, 7 and 8.
-v1.3.0.RELEASE - works with Tomcat 8.5, and with Java 7 and 8. 
-
-
+- v1.2.0.RELEASE - works with both Tomcat 7 and 8, and with Java 6, 7 and 8.
+- v1.3.0.RELEASE - works with Tomcat 8.5, and with Java 7 and 8.
 
 ### Usage
 To use the Store, edit either the Tomcat instance's or application's `context.xml`, adding the following, `<Valve />`, `<Manager />`, and `<Store />` definitions.
@@ -45,6 +43,6 @@ This project is released under version 2.0 of the [Apache License][a].
 
 [a]: http://www.apache.org/licenses/LICENSE-2.0
 [c]: CONTRIBUTING.md
-[m]: http://tomcat.apache.org/tomcat-7.0-doc/config/manager.html
+[m]: http://tomcat.apache.org/tomcat-8.5-doc/config/manager.html
 [p]: http://help.github.com/send-pull-requests
 [r]: http://redis.io
