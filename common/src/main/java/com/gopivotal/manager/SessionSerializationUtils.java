@@ -16,16 +16,19 @@
 
 package com.gopivotal.manager;
 
-import org.apache.catalina.Manager;
-import org.apache.catalina.Session;
-import org.apache.catalina.session.StandardSession;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.ObjectStreamClass;
+
+import org.apache.catalina.Context;
+import org.apache.catalina.Globals;
+import org.apache.catalina.Manager;
+import org.apache.catalina.Session;
+import org.apache.catalina.session.StandardSession;
 
 /**
  * Utilities for serializing and deserializing {@link Session}s
@@ -58,10 +61,21 @@ public final class SessionSerializationUtils {
 
         ByteArrayInputStream bytes = null;
         ObjectInputStream in = null;
+        Context context = this.manager.getContext();
+        ClassLoader oldThreadContextCL = context.bind(Globals.IS_SECURITY_ENABLED, null);
 
         try {
             bytes = new ByteArrayInputStream(session);
-            in = new ObjectInputStream(bytes);
+            in = new ObjectInputStream(bytes) {
+                @Override
+                protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
+                    try {
+                        return Class.forName(desc.getName(), false, Thread.currentThread().getContextClassLoader());
+                    } catch (ClassNotFoundException cnfe) {
+                        return super.resolveClass(desc);
+                    }
+                }
+            };
 
             StandardSession standardSession = (StandardSession) this.manager.createEmptySession();
             standardSession.readObjectData(in);
@@ -69,6 +83,7 @@ public final class SessionSerializationUtils {
             return standardSession;
         } finally {
             closeQuietly(in, bytes);
+            context.unbind(Globals.IS_SECURITY_ENABLED, oldThreadContextCL);
         }
     }
 
@@ -109,5 +124,4 @@ public final class SessionSerializationUtils {
             }
         }
     }
-
 }
