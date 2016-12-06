@@ -21,18 +21,6 @@ To use the Store, edit either the Tomcat instance's or application's `context.xm
 </Context>
 ```
 
-### Binaries
-Version 1.3.x+ are available at:
-- Spring Artifactory Repository - https://repo.spring.io - Under com/gopivotal/manager/redis-store
-   - group "com.gopivotal.manager"
-   - name "redis-store" 
-   - version "<version you want>"
-Version 1.2.0 is available at:
-- Maven repo http://maven.gopivotal.com.s3.amazonaws.com/release/ 
-   - group "com.gopivotal.manager"
-   - name "redis-store" 
-   - version "1.2.0.RELEASE"
-
 ### Configuration
 The Store has a number of configuration elements that dictate how the Redis connection will be created.
 
@@ -46,6 +34,21 @@ The Store has a number of configuration elements that dictate how the Redis conn
 | `timeout` | `2000` | The connection timeout in milliseconds
 | `uri` | `<none>` | A URI-style representation of the connection details, e.g. `redis://username:password@localhost:6370/0`
 
+### Binaries
+Version 1.3.x+ are available at:
+
+* [Spring Artifactory Repository](https://repo.spring.io) 
+   * group "com.gopivotal.manager"
+   * name "redis-store" 
+   * version "`<version>`"
+
+Version 1.2.0 is available at:
+
+* Maven repo 
+  * Repo URL: http://maven.gopivotal.com.s3.amazonaws.com/release/ 
+     * group "com.gopivotal.manager"
+     * name "redis-store" 
+     * version "1.2.0.RELEASE"
 
 ## Contributing
 [Pull requests][p] are welcome; see the [contributor guidelines][c] for details.
