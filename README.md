@@ -5,7 +5,7 @@ This project contains implementations of the [Tomcat `PersistentManager` Store][
 This implementation of the Tomcat `PersistentManager` `Store` persists data to [Redis][r].  Sessions are serialized from their Java representation and the resulting `byte[]` is stored, keyed by the `Session` id (i.e. `JSESSIONID`).
 
 - v1.2.0.RELEASE - works with both Tomcat 7 and 8, and with Java 6, 7 and 8.
-- v1.3.0.RELEASE - works with Tomcat 8.5, and with Java 7 and 8.
+- v1.3.x.RELEASE - works with Tomcat 8.5, and with Java 7 and 8.
 
 ### Usage
 To use the Store, edit either the Tomcat instance's or application's `context.xml`, adding the following, `<Valve />`, `<Manager />`, and `<Store />` definitions.
@@ -20,6 +20,18 @@ To use the Store, edit either the Tomcat instance's or application's `context.xm
   ...
 </Context>
 ```
+
+### Binaries
+Version 1.3.x+ are available at:
+- Spring Artifactory Repository - https://repo.spring.io - Under com/gopivotal/manager/redis-store
+   - group "com.gopivotal.manager"
+   - name "redis-store" 
+   - version "<version you want>"
+Version 1.2.0 is available at:
+- Maven repo http://maven.gopivotal.com.s3.amazonaws.com/release/ 
+   - group "com.gopivotal.manager"
+   - name "redis-store" 
+   - version "1.2.0.RELEASE"
 
 ### Configuration
 The Store has a number of configuration elements that dictate how the Redis connection will be created.
