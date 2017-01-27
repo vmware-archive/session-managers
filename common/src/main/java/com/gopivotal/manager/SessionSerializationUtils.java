@@ -26,6 +26,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.ObjectStreamClass;
 
 /**
  * Utilities for serializing and deserializing {@link Session}s
@@ -61,7 +62,16 @@ public final class SessionSerializationUtils {
 
         try {
             bytes = new ByteArrayInputStream(session);
-            in = new ObjectInputStream(bytes);
+            in = new ObjectInputStream(bytes) {
+                @Override
+                protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
+                    try {
+                        return Class.forName(desc.getName(), false, Thread.currentThread().getContextClassLoader());
+                    } catch (ClassNotFoundException cnfe) {
+                        return super.resolveClass(desc);
+                    }
+                }
+            };
 
             StandardSession standardSession = (StandardSession) this.manager.createEmptySession();
             standardSession.readObjectData(in);
