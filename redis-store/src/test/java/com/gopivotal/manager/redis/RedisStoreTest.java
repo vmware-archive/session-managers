@@ -306,7 +306,7 @@ public final class RedisStoreTest {
 
         this.store.startInternal();
 
-        verify(this.jedisPool).returnResource(this.jedis);
+        verify(this.jedis).close();
         verify(this.jmxSupport).register("Catalina:type=Store,context=/test-context-name,host=test-host-name," +
                 "name=RedisStore", this.store);
     }
