@@ -31,39 +31,43 @@ import org.apache.catalina.Valve;
 import org.apache.commons.pool2.impl.GenericKeyedObjectPoolConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
+import redis.clients.jedis.HostAndPort;
+import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.Protocol;
-import redis.clients.jedis.Response;
-import redis.clients.jedis.Transaction;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.net.URI;
+import java.util.HashSet;
 import java.util.Set;
+
+import static redis.clients.jedis.Protocol.DEFAULT_TIMEOUT;
 
 /**
  * An implementation of {@link Store} that persists data to Redis
  */
 public final class RedisStore extends AbstractLifecycle implements RedisStoreManagement, Store {
 
+    public static final int DEFAULT_SO_TIMEOUT = 2000;
     private static final String SESSIONS_KEY = "sessions";
+    private static final int DEFAULT_MAX_ATTEMPTS = 5;
     private final JmxSupport jmxSupport;
     private final LockTemplate lockTemplate = new LockTemplate();
     private final Logger logger = LoggerFactory.getLogger(RedisStore.class);
     private final PropertyChangeSupport propertyChangeSupport;
+    protected volatile JedisClient jedisClient;
+    private volatile Manager manager;
     private volatile int connectionPoolSize = GenericKeyedObjectPoolConfig.DEFAULT_MAX_TOTAL;
     private volatile int database = Protocol.DEFAULT_DATABASE;
     private volatile String host = "localhost";
-    private volatile JedisPool jedisPool;
-    private volatile JedisTemplate jedisTemplate;
-    private volatile Manager manager;
+    private boolean cluster = false;
     private volatile String password;
     private volatile int port = Protocol.DEFAULT_PORT;
+    private volatile int timeout = DEFAULT_TIMEOUT;
     private volatile SessionSerializationUtils sessionSerializationUtils;
-    private volatile int timeout = Protocol.DEFAULT_TIMEOUT;
 
     /**
      * Create a new instance
@@ -76,10 +80,9 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
         this.propertyChangeSupport = new StandardPropertyChangeSupport(this);
     }
 
-    RedisStore(JedisPool jedisPool, JmxSupport jmxSupport, PropertyChangeSupport propertyChangeSupport,
-            SessionSerializationUtils sessionSerializationUtils) {
-        this.jedisPool = jedisPool;
-        this.jedisTemplate = new JedisTemplate(this.jedisPool);
+    RedisStore(JmxSupport jmxSupport, PropertyChangeSupport propertyChangeSupport,
+               SessionSerializationUtils sessionSerializationUtils, JedisClient jedisClient) {
+        this.jedisClient = jedisClient;
         this.jmxSupport = jmxSupport;
         this.propertyChangeSupport = propertyChangeSupport;
         this.sessionSerializationUtils = sessionSerializationUtils;
@@ -97,26 +100,10 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
             @Override
             public Void invoke() {
                 try {
-                    RedisStore.this.jedisTemplate.withJedis(new JedisTemplate.JedisOperation<Void>() {
-
-                        @Override
-                        public Void invoke(Jedis jedis) {
-                            Set<String> sessions = jedis.smembers(SESSIONS_KEY);
-                            String[] sessionsArray = sessions.toArray(new String[sessions.size()]);
-
-                            Transaction t = jedis.multi();
-                            t.srem(SESSIONS_KEY, sessionsArray);
-                            t.del(sessionsArray);
-                            t.exec();
-
-                            return null;
-                        }
-
-                    });
+                    RedisStore.this.jedisClient.clean(SESSIONS_KEY);
                 } catch (JedisConnectionException e) {
                     RedisStore.this.logger.error("Unable to clear persisted sessions", e);
                 }
-
                 return null;
             }
 
@@ -313,27 +300,12 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
             @Override
             public Integer invoke() {
-                int size;
-
                 try {
-                    size = RedisStore.this.jedisTemplate.withJedis(new JedisTemplate.JedisOperation<Integer>() {
-
-                        @Override
-                        public Integer invoke(Jedis jedis) {
-                            Transaction t = jedis.multi();
-                            Response<Long> count = t.scard(SESSIONS_KEY);
-                            t.exec();
-
-                            return count.get().intValue();
-                        }
-
-                    });
+                    return RedisStore.this.jedisClient.count(SESSIONS_KEY);
                 } catch (JedisConnectionException e) {
                     RedisStore.this.logger.error("Unable to get the number of persisted sessions", e);
-                    size = Integer.MIN_VALUE;
+                    return Integer.MIN_VALUE;
                 }
-
-                return size;
             }
 
         });
@@ -381,6 +353,36 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
         });
     }
 
+    @Override
+    public boolean getCluster() {
+        return this.lockTemplate.withReadLock(new LockTemplate.LockedOperation<Boolean>() {
+
+            @Override
+            public Boolean invoke() {
+                return RedisStore.this.cluster;
+            }
+
+        });
+    }
+
+    /**
+     * Sets the cluster mode
+     *
+     * @param cluster
+     */
+    public void setCluster(final boolean cluster) {
+        this.lockTemplate.withWriteLock(new LockTemplate.LockedOperation<Void>() {
+
+            @Override
+            public Void invoke() {
+                boolean previous = RedisStore.this.cluster;
+                RedisStore.this.cluster = cluster;
+                RedisStore.this.propertyChangeSupport.notify("cluster", previous, RedisStore.this.cluster);
+                return null;
+            }
+        });
+    }
+
     /**
      * Sets the connection URI
      *
@@ -408,29 +410,14 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
             @Override
             public String[] invoke() {
-                String[] keys;
-
                 try {
-                    keys = RedisStore.this.jedisTemplate.withJedis(new JedisTemplate.JedisOperation<String[]>() {
-
-                        @Override
-                        public String[] invoke(Jedis jedis) {
-                            Transaction t = jedis.multi();
-                            Response<Set<String>> sessionIds = t.smembers(SESSIONS_KEY);
-                            t.exec();
-
-                            return sessionIds.get().toArray(new String[sessionIds.get().size()]);
-                        }
-
-                    });
+                    Set<String> sessions = RedisStore.this.jedisClient.getSessions(SESSIONS_KEY);
+                    return sessions.toArray(new String[sessions.size()]);
                 } catch (JedisConnectionException e) {
                     RedisStore.this.logger.error("Unable to get the keys of persisted sessions", e);
-                    keys = new String[0];
+                    return new String[0];
                 }
-
-                return keys;
             }
-
         });
     }
 
@@ -440,33 +427,17 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
             @Override
             public Session invoke() {
-                Session session;
-
                 try {
-                    session = RedisStore.this.jedisTemplate.withJedis(new JedisTemplate.JedisOperation<Session>() {
-
-                        @Override
-                        public Session invoke(Jedis jedis) {
-                            try {
-                                Transaction t = jedis.multi();
-                                Response<byte[]> session = t.get(id.getBytes(Protocol.CHARSET));
-                                t.exec();
-
-                                return RedisStore.this.sessionSerializationUtils.deserialize(session.get());
-                            } catch (ClassNotFoundException | IOException e) {
-                                RedisStore.this.logger.error("Unable to load session {}. Empty session created.", id, e);
-                                return RedisStore.this.manager.createSession(id);
-                            }
-                        }
-                    });
+                    byte[] session = RedisStore.this.jedisClient.get(id);
+                    return session == null ? RedisStore.this.manager.createSession(id) : RedisStore.this.sessionSerializationUtils.deserialize(session);
                 } catch (JedisConnectionException e) {
-                    RedisStore.this.logger.error("Unable to load session {}. Empty session created", id, e);
-                    session = RedisStore.this.manager.createSession(id);
+                    return logAndCreateEmptySession(id, e);
+                } catch (ClassNotFoundException e) {
+                    return logAndCreateEmptySession(id, e);
+                } catch (IOException e) {
+                    return logAndCreateEmptySession(id, e);
                 }
-
-                return session;
             }
-
         });
     }
 
@@ -477,19 +448,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
             @Override
             public Void invoke() {
                 try {
-                    RedisStore.this.jedisTemplate.withJedis(new JedisTemplate.JedisOperation<Void>() {
-
-                        @Override
-                        public Void invoke(Jedis jedis) {
-                            Transaction t = jedis.multi();
-                            t.srem(SESSIONS_KEY, id);
-                            t.del(id);
-                            t.exec();
-
-                            return null;
-                        }
-
-                    });
+                    RedisStore.this.jedisClient.del(SESSIONS_KEY, id);
                 } catch (JedisConnectionException e) {
                     RedisStore.this.logger.error("Unable to remove session {}", id, e);
                 }
@@ -507,41 +466,21 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
     @Override
     public void save(final Session session) {
-        this.lockTemplate.withReadLock(new LockTemplate.LockedOperation<Void>() {
-
-            @Override
-            public Void invoke() {
-                final String sessionId = session.getId();
-
-                try {
-                    RedisStore.this.jedisTemplate.withJedis(new JedisTemplate.JedisOperation<Void>() {
-
-                        @Override
-                        public Void invoke(Jedis jedis) {
-                            try {
-                                Transaction t = jedis.multi();
-                                t.set(session.getId().getBytes(Protocol.CHARSET), RedisStore.this.sessionSerializationUtils
-                                        .serialize(session));
-                                t.sadd(SESSIONS_KEY, sessionId);
-                                t.exec();
-                            } catch (IOException e) {
-                                RedisStore.this.logger.error("Unable to save session {}", sessionId, e);
-                            }
-
-                            return null;
+        this.lockTemplate.withReadLock(
+                new LockTemplate.LockedOperation<Void>() {
+                    @Override
+                    public Void invoke() {
+                        try {
+                            byte[] serialized = RedisStore.this.sessionSerializationUtils.serialize(session);
+                            RedisStore.this.jedisClient.set(session.getId(), SESSIONS_KEY, serialized, session.getMaxInactiveInterval());
+                        } catch (JedisConnectionException e) {
+                            RedisStore.this.logger.error("Unable to persist session {}", session.getId(), e);
+                        } catch (IOException e) {
+                            RedisStore.this.logger.error("Unable to save session {}", session.getId(), e);
                         }
-
+                        return null;
                     }
-
-                    );
-                } catch (JedisConnectionException e) {
-                    RedisStore.this.logger.error("Unable to persist session {}", sessionId, e);
                 }
-
-                return null;
-            }
-
-        }
 
         );
     }
@@ -571,17 +510,34 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
             @Override
             public Void invoke() {
-                if (RedisStore.this.jedisPool == null) {
-                    JedisPoolConfig poolConfig = new JedisPoolConfig();
-                    poolConfig.setMaxTotal(RedisStore.this.connectionPoolSize);
+                if (RedisStore.this.jedisClient != null) {
+                    try {
+                        RedisStore.this.jedisClient.close();
+                    } catch (IOException e) {
+                        RedisStore.this.logger.error("Error closing previous template", e);
+                    }
+                }
+                JedisPoolConfig poolConfig = new JedisPoolConfig();
+                poolConfig.setMaxTotal(RedisStore.this.connectionPoolSize);
+                poolConfig.setTestOnBorrow(true);
+                poolConfig.setTestOnReturn(true);
+                poolConfig.setTestWhileIdle(true);
 
-                    RedisStore.this.jedisPool = new JedisPool(poolConfig, RedisStore.this.host, RedisStore.this.port,
+                if (cluster) {
+                    Set<HostAndPort> jedisClusterNodes = new HashSet<>();
+                    for (String host : RedisStore.this.host.split(";")) {
+                        jedisClusterNodes.add(HostAndPort.parseString(host));
+                    }
+
+                    JedisCluster jedisCluster = new JedisCluster(jedisClusterNodes, RedisStore.this.timeout, DEFAULT_SO_TIMEOUT,
+                            DEFAULT_MAX_ATTEMPTS, RedisStore.this.password, poolConfig);
+                    RedisStore.this.jedisClient = new JedisClusterClient(jedisCluster);
+                } else {
+                    JedisPool jedisPool = new JedisPool(poolConfig, RedisStore.this.host, RedisStore.this.port,
                             RedisStore.this.timeout, RedisStore.this.password, RedisStore.this.database);
+                    RedisStore.this.jedisClient = new JedisNodeClient(jedisPool);
                 }
 
-
-                RedisStore.this.jedisTemplate = new JedisTemplate(RedisStore.this.jedisPool);
-                connect();
                 RedisStore.this.jmxSupport.register(getObjectName(), RedisStore.this);
 
                 return null;
@@ -595,29 +551,14 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
         this.lockTemplate.withWriteLock(new LockTemplate.LockedOperation<Void>() {
 
             @Override
-            public Void invoke() {
-                if (RedisStore.this.jedisPool != null) {
+            public Void invoke() throws IOException {
+                if (RedisStore.this.jedisClient != null) {
                     RedisStore.this.logger.info("Closing connection to Redis Server");
-                    RedisStore.this.jedisPool.destroy();
+                    RedisStore.this.jedisClient.close();
                 }
 
                 RedisStore.this.jmxSupport.unregister(getObjectName());
 
-                return null;
-            }
-
-        });
-    }
-
-    private void connect() {
-        this.logger.info(String.format("Connecting to Redis Server at redis://%s:%d/%d", this.host, this.port,
-                    this.database));
-
-        this.jedisTemplate.withJedis(new JedisTemplate.JedisOperation<Void>() {
-
-            @Override
-            public Void invoke(Jedis jedis) {
-                RedisStore.this.logger.info("Connection to Redis Server successful");
                 return null;
             }
 
