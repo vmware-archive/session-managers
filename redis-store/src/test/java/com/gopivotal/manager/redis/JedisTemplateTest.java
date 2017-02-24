@@ -48,7 +48,7 @@ public final class JedisTemplateTest {
     }
 
     @Test
-    public void returnBrokenResourceException() throws Exception {
+    public void returnResourceOnFail() throws Exception {
         JedisConnectionException expected = new JedisConnectionException("test-message");
         when(this.operation.invoke(this.jedis)).thenThrow(expected);
         doThrow(new JedisConnectionException("test-message")).when(this.jedisPool).returnBrokenResource(this.jedis);
@@ -60,7 +60,7 @@ public final class JedisTemplateTest {
             assertSame(expected, e);
         }
 
-        verify(this.jedisPool).returnResource(this.jedis);
+        verify(this.jedis, times(1)).close();
     }
 
     @Test
@@ -80,7 +80,7 @@ public final class JedisTemplateTest {
         String result = this.jedisTemplate.withJedis(this.operation);
 
         assertEquals("test-value", result);
-        verify(this.jedisPool).returnResource(this.jedis);
+        verify(this.jedis, times(1)).close();
     }
 
     @Test
@@ -95,8 +95,7 @@ public final class JedisTemplateTest {
             assertSame(expected, e);
         }
 
-        verify(this.jedisPool).returnBrokenResource(this.jedis);
-        verify(this.jedisPool).returnResource(this.jedis);
+        verify(this.jedis, times(1)).close();
     }
 
     @Test
@@ -111,7 +110,6 @@ public final class JedisTemplateTest {
             assertSame(expected, e);
         }
 
-        verify(this.jedisPool, times(0)).returnBrokenResource(null);
-        verify(this.jedisPool, times(0)).returnResource(null);
+        verify(this.jedis, times(0)).close();
     }
 }
