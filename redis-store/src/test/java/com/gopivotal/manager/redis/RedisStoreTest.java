@@ -188,7 +188,7 @@ public final class RedisStoreTest {
 
     @Test
     public void load() throws IOException {
-        Session session = new StandardSession(this.manager);
+        Session session = getStandardSession();
         session.setId("test-id");
 
         Response<byte[]> response = new Response<byte[]>(BuilderFactory.BYTE_ARRAY);
@@ -200,6 +200,12 @@ public final class RedisStoreTest {
 
         assertEquals(session.getId(), result.getId());
         verify(this.transaction).exec();
+    }
+
+    private StandardSession getStandardSession() {
+        final StandardSession standardSession = new StandardSession(this.manager);
+        standardSession.setMaxInactiveInterval(-1);
+        return standardSession;
     }
 
     @Test
@@ -265,7 +271,7 @@ public final class RedisStoreTest {
 
     @Test
     public void save() throws IOException {
-        Session session = new StandardSession(this.manager);
+        Session session = getStandardSession();
         session.setId("test-id");
 
         this.store.save(session);
@@ -277,8 +283,20 @@ public final class RedisStoreTest {
     }
 
     @Test
+    public void saveWithSessionTimeout() throws IOException {
+        Session session = getStandardSession();
+        session.setMaxInactiveInterval(3600);
+        session.setId("test-id");
+
+        this.store.save(session);
+
+        verify(this.transaction).expire(session.getId().getBytes(Protocol.CHARSET), 3600);
+        verify(this.transaction).exec();
+    }
+
+    @Test
     public void saveJedisConnectionException() {
-        Session session = new StandardSession(this.manager);
+        Session session = getStandardSession();
         session.setId("test-id");
 
         when(this.jedisPool.getResource()).thenThrow(new JedisConnectionException("test-message"));
@@ -398,6 +416,11 @@ public final class RedisStoreTest {
 
         @Override
         public Response<String> set(byte[] key, byte[] value) {
+            return null;
+        }
+
+        @Override
+        public Response<Long> expire(byte[] key, int seconds) {
             return null;
         }
 

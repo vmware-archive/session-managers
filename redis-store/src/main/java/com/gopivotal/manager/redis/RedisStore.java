@@ -534,16 +534,17 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
                                            @Override
                                            public Void invoke() {
                                                final String sessionId = session.getId();
-
+                                               final int sessionTimeoutSeconds = session.getMaxInactiveInterval();
                                                try {
                                                    RedisStore.this.jedisTemplate.withJedis(new JedisTemplate.JedisOperation<Void>() {
 
                                                                                                @Override
                                                                                                public Void invoke(Jedis jedis) {
                                                                                                    try {
+                                                                                                       final byte[] key = session.getId().getBytes(Protocol.CHARSET);
                                                                                                        Transaction t = jedis.multi();
-                                                                                                       t.set(session.getId().getBytes(Protocol.CHARSET), RedisStore.this.sessionSerializationUtils
-                                                                                                               .serialize(session));
+                                                                                                       t.set(key, RedisStore.this.sessionSerializationUtils.serialize(session));
+                                                                                                       t.expire(key, sessionTimeoutSeconds);
                                                                                                        t.sadd(SESSIONS_KEY, sessionId);
                                                                                                        t.exec();
                                                                                                    } catch (IOException e) {
