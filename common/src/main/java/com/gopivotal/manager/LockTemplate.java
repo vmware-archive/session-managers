@@ -16,12 +16,12 @@
 
 package com.gopivotal.manager;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.logging.Logger;
-
-import static java.util.logging.Level.SEVERE;
 
 /**
  * Utility methods that encapsulate {@link ReadWriteLock} idioms into closure-like methods.
@@ -29,7 +29,7 @@ import static java.util.logging.Level.SEVERE;
 @SuppressWarnings("PMD.AvoidThrowingRawExceptionTypes")
 public final class LockTemplate {
 
-    private final Logger logger = Logger.getLogger(this.getClass().getName());
+    private final Logger logger = LoggerFactory.getLogger(LockTemplate.class);
 
     private final ReadWriteLock monitor;
 
@@ -58,7 +58,7 @@ public final class LockTemplate {
         try {
             return operation.invoke();
         } catch (Exception e) {
-            this.logger.log(SEVERE, "Error while invoking read-locked operation", e);
+            this.logger.error("Error while invoking read-locked operation", e);
             throw new RuntimeException(e);
         } finally {
             lock.unlock();
@@ -79,7 +79,7 @@ public final class LockTemplate {
         try {
             return operation.invoke();
         } catch (Exception e) {
-            this.logger.log(SEVERE, "Error while invoking write-locked operation", e);
+            this.logger.error("Error while invoking write-locked operation", e);
             throw new RuntimeException(e);
         } finally {
             lock.unlock();
