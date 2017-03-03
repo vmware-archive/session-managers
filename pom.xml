@@ -33,10 +33,12 @@
     </modules>
 
     <properties>
-        <jedis.version>2.5.1</jedis.version>
-        <junit.version>4.11</junit.version>
+        <jedis.version>2.9.0</jedis.version>
+        <junit.version>4.12</junit.version>
         <mockito.version>1.9.5</mockito.version>
         <tomcat.version>7.0.54</tomcat.version>
+        <slf4j.version>1.7.24</slf4j.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <dependencyManagement>
@@ -66,8 +68,21 @@
                 <artifactId>jedis</artifactId>
                 <version>${jedis.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+    </dependencies>
 
     <build>
 

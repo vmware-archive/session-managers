@@ -16,21 +16,20 @@
 
 package com.gopivotal.manager;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
-
-import static java.util.logging.Level.WARNING;
-
 
 /**
  * The standard implementation of the {@link PropertyChangeSupport} interface
  */
 public final class StandardPropertyChangeSupport implements PropertyChangeSupport {
 
-    private final Logger logger = Logger.getLogger(this.getClass().getName());
+    private final Logger logger = LoggerFactory.getLogger(StandardPropertyChangeSupport.class);
 
     private final Object monitor = new Object();
 
@@ -79,7 +78,7 @@ public final class StandardPropertyChangeSupport implements PropertyChangeSuppor
             try {
                 propertyChangeListener.propertyChange(propertyChangeEvent);
             } catch (RuntimeException e) {
-                this.logger.log(WARNING, "Exception encountered while notifying listener of property change", e);
+                this.logger.warn("Exception encountered while notifying listener of property change", e);
             }
         }
     }
