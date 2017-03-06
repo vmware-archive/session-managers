@@ -53,6 +53,9 @@ Version 1.2.0 is available at:
 ## Contributing
 [Pull requests][p] are welcome; see the [contributor guidelines][c] for details.
 
+## Builds
+Each branch, release, and pull request kicks off builds on [Travis CI](https://travis-ci.org/pivotalsoftware/session-managers)
+
 ## License
 This project is released under version 2.0 of the [Apache License][a].
 
