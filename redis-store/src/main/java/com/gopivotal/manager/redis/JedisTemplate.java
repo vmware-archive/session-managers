@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,35 +16,26 @@
 
 package com.gopivotal.manager.redis;
 
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.exceptions.JedisConnectionException;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.Set;
 
-final class JedisTemplate {
+/**
+ * Created by marcelo on 23/02/17.
+ */
+public interface JedisTemplate {
 
-    private final JedisPool jedisPool;
+    Set<String> getSessions(String sessionsKey);
 
-    JedisTemplate(JedisPool jedisPool) {
-        this.jedisPool = jedisPool;
-    }
+    void del(String sessionsKey, String key);
 
-    <T> T withJedis(JedisOperation<T> operation) {
-        try(Jedis jedis = this.jedisPool.getResource()) {
-            return operation.invoke(jedis);
-        } catch (JedisConnectionException e) {
-            throw e;
-        }
-    }
+    Integer count(String sessionsKey);
 
-    interface JedisOperation<T> {
+    byte[] get(String key) throws UnsupportedEncodingException;
 
-        /**
-         * Invoke the operation
-         *
-         * @param jedis the {@link Jedis} instance to use
-         * @return the return value of the operation
-         */
-        T invoke(Jedis jedis);
-    }
+    void set(String key, String sessionsKey, byte[] session) throws UnsupportedEncodingException;
 
+    void clean(String sessionsKey);
+
+    void close() throws IOException;
 }
