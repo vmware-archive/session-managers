@@ -40,8 +40,8 @@ The Store has a number of configuration elements that dictate how the Redis conn
 [Pull requests][p] are welcome; see the [contributor guidelines][c] for details.
 
 ## Logging
-This project uses [SLF4J][s] and defaults to Java Utils Logging (JUL) binding
-In case you want to use another one you must to package your binder and explicit remove the JUL dependency:
+This project uses [SLF4J][s] and defaults to Java Utils Logging (JUL) binding.
+In you want to use a different binding, you must package your binding and explicitly remove the JUL binding dependency:
 
  ```xml
              <dependency>
