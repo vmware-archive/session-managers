@@ -39,6 +39,24 @@ The Store has a number of configuration elements that dictate how the Redis conn
 ## Contributing
 [Pull requests][p] are welcome; see the [contributor guidelines][c] for details.
 
+## Logging
+This project uses [SLF4J][s] and defaults to Java Utils Logging (JUL) binding
+In case you want to use another one you must to package your binder and explicit remove the JUL dependency:
+
+ ```xml
+             <dependency>
+                 <groupId>com.gopivotal.manager</groupId>
+                 <artifactId>session-managers</artifactId>
+                 <version>${session-managers.version}</version>
+                 <exclusions>
+                    <exclusion>
+                         <groupId>org.slf4j</groupId>
+                         <artifactId>slf4j-jdk14</artifactId>
+                     </exclusion>
+                 </exclusions>
+             </dependency>
+```
+
 ## License
 This project is released under version 2.0 of the [Apache License][a].
 
@@ -47,3 +65,4 @@ This project is released under version 2.0 of the [Apache License][a].
 [m]: http://tomcat.apache.org/tomcat-7.0-doc/config/manager.html
 [p]: http://help.github.com/send-pull-requests
 [r]: http://redis.io
+[s]: https://www.slf4j.org/manual.html
