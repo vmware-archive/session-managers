@@ -85,6 +85,9 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
      * @see com.gopivotal.manager.StandardPropertyChangeSupport
      */
     public RedisStore() {
+        Package pkg = this.getClass().getPackage();
+        this.logger.info("{} {}, {}", pkg.getImplementationVendor(), pkg.getImplementationTitle(),
+                pkg.getImplementationVersion());
         this.logger.info(String.format("Sessions will be persisted to Redis using a %s", this.getClass().getName()));
         this.jmxSupport = new StandardJmxSupport();
         this.propertyChangeSupport = new StandardPropertyChangeSupport(this);
@@ -159,6 +162,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
             @Override
             public Void invoke() {
+                RedisStore.this.logger.info("setting connectionPoolSize={}", connectionPoolSize);
                 int previous = RedisStore.this.connectionPoolSize;
                 RedisStore.this.connectionPoolSize = connectionPoolSize;
                 RedisStore.this.propertyChangeSupport.notify("connectionPoolSize", previous,
@@ -191,6 +195,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
             @Override
             public Void invoke() {
+                RedisStore.this.logger.info("setting database={}", database);
                 int previous = RedisStore.this.database;
                 RedisStore.this.database = database;
                 RedisStore.this.propertyChangeSupport.notify("database", previous, RedisStore.this.database);
@@ -222,6 +227,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
             @Override
             public Void invoke() {
+                RedisStore.this.logger.info("setting host={}", host);
                 String previous = RedisStore.this.host;
                 RedisStore.this.host = host;
                 RedisStore.this.propertyChangeSupport.notify("host", previous, RedisStore.this.host);
@@ -286,6 +292,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
             @Override
             public Void invoke() {
+                RedisStore.this.logger.info("setting password=*");
                 String previous = RedisStore.this.password;
                 RedisStore.this.password = password;
                 RedisStore.this.propertyChangeSupport.notify("password", previous, RedisStore.this.password);
@@ -317,6 +324,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
             @Override
             public Void invoke() {
+                RedisStore.this.logger.info("setting port={}", port);
                 int previous = RedisStore.this.port;
                 RedisStore.this.port = port;
                 RedisStore.this.propertyChangeSupport.notify("port", previous, RedisStore.this.port);
@@ -380,6 +388,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
             @Override
             public Void invoke() {
+                RedisStore.this.logger.info("setting timeout={}", timeout);
                 int previous = RedisStore.this.timeout;
                 RedisStore.this.timeout = timeout;
                 RedisStore.this.propertyChangeSupport.notify("timeout", previous, RedisStore.this.timeout);
@@ -410,6 +419,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
             @Override
             public Void invoke() {
+                RedisStore.this.logger.info("setting uri={}", uri);
                 URI richUri = URI.create(uri);
                 setHost(richUri.getHost());
                 setPort(richUri.getPort());
