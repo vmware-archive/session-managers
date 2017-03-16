@@ -53,6 +53,10 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
     private static final String SESSIONS_KEY = "sessions";
 
+    private static final String REDIS_SCHEME = "redis";
+
+    private static final String REDIS_SSL_SCHEME = "rediss";
+
     private final JmxSupport jmxSupport;
 
     private final LockTemplate lockTemplate = new LockTemplate();
@@ -437,7 +441,8 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
         return this.lockTemplate.withReadLock(new LockTemplate.LockedOperation<String>() {
             @Override
             public String invoke() {
-                return String.format("redis://%s%s:%d/%d", getUserInfo(), RedisStore.this.host,
+                return String.format("%s://%s%s:%d/%d", RedisStore.this.sslEnabled ? REDIS_SSL_SCHEME : REDIS_SCHEME,
+                        getUserInfo(), RedisStore.this.host,
                         RedisStore.this.port, RedisStore.this.database);
             }
         });
@@ -455,6 +460,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
             public Void invoke() {
                 RedisStore.this.logger.info("setting uri={}", uri);
                 URI richUri = URI.create(uri);
+                setSslEnabled(isSslScheme(richUri.getScheme()));
                 setHost(richUri.getHost());
                 setPort(richUri.getPort());
                 setPassword(parsePassword(richUri));
@@ -675,7 +681,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
     }
 
     private void connect() {
-        this.logger.info("Connecting to Redis Server at redis://{}:{}/{}", this.host, this.port, this.database);
+        this.logger.info("Connecting to Redis Server at {}", this.getUri());
 
         this.jedisTemplate.withJedis(new JedisTemplate.JedisOperation<Void>() {
 
@@ -724,4 +730,15 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
         return userInfo.split(":", 2)[1];
     }
+    private boolean isSslScheme(String scheme) {
+        if (scheme.equalsIgnoreCase(REDIS_SCHEME)) {
+            return false;
+        }
+        if (scheme.equalsIgnoreCase(REDIS_SSL_SCHEME)) {
+            return true;
+        }
+        throw new IllegalArgumentException(String.format("URI scheme must be one of: %s, %s", REDIS_SCHEME,
+                REDIS_SSL_SCHEME));
+    }
+
 }
