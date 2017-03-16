@@ -75,6 +75,8 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
     private volatile int port = Protocol.DEFAULT_PORT;
 
+    private volatile boolean sslEnabled = false;
+
     private volatile SessionSerializationUtils sessionSerializationUtils;
 
     private volatile int timeout = Protocol.DEFAULT_TIMEOUT;
@@ -328,6 +330,37 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
                 int previous = RedisStore.this.port;
                 RedisStore.this.port = port;
                 RedisStore.this.propertyChangeSupport.notify("port", previous, RedisStore.this.port);
+                return null;
+            }
+
+        });
+    }
+
+    @Override
+    public boolean isSSLEnabled() {
+        return this.lockTemplate.withReadLock(new LockTemplate.LockedOperation<Boolean>() {
+
+            @Override
+            public Boolean invoke() {
+                return RedisStore.this.sslEnabled;
+            }
+
+        });
+    }
+
+    /**
+     * Sets whether to connect over SSL
+     *
+     * @param enabled if <tt>true</tt>, connect over SSL
+     */
+    public void setSSLEnabled(final boolean enabled) {
+        this.lockTemplate.withWriteLock(new LockTemplate.LockedOperation<Void>() {
+
+            @Override
+            public Void invoke() {
+                boolean previous = RedisStore.this.sslEnabled;
+                RedisStore.this.sslEnabled = enabled;
+                RedisStore.this.propertyChangeSupport.notify("sslEnabled", previous, RedisStore.this.sslEnabled);
                 return null;
             }
 

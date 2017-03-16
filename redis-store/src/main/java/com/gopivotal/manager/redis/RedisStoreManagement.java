@@ -60,6 +60,13 @@ public interface RedisStoreManagement {
     int getPort();
 
     /**
+     * Returns whether SSL enabled for Redis
+     *
+     * @return whether Redis SSL enabled
+     */
+    boolean isSSLEnabled();
+
+    /**
      * Returns the Redis connection timeout
      *
      * @return the Redis connection timeout
