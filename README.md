@@ -32,6 +32,7 @@ The Store has a number of configuration elements that dictate how the Redis conn
 | `host` | `localhost` | The host to connect to
 | `password` | `<none>` | The password to use to `AUTH`
 | `port` | `6379` | The port to connect to
+| `sslEnabled` | `false` | If `true`, connect over SSL
 | `timeout` | `2000` | The connection timeout in milliseconds
 | `uri` | `<none>` | A URI-style representation of the connection details, e.g. `redis://username:password@localhost:6370/0`
 

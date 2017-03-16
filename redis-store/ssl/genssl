@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+
+prog=$(basename $0)
+pass=password
+
+usage() {
+    echo
+    echo "usage: $prog [-h] NAME"
+    echo "where: NAME is the base file name for generated artifacts"
+    echo "desc : generate a Java key store and associated certificate and key"
+    echo "notes: password for all artifacts is '$pass'"
+    echo
+}
+
+while getopts ":h" opt ; do
+    case $opt in
+        h)
+            usage
+            exit
+            ;;
+        :)
+            die "-$OPTARG requires an argument"
+            ;;
+        \?)
+            die "invalid option -$OPTARG" >&2
+            ;;
+    esac
+done
+shift $(($OPTIND-1))
+
+if [[ $# == 0 ]] ; then
+    echo
+    echo "NAME not specified; run with -h for help" >&2
+    echo
+    exit 1
+fi
+
+name=$1
+shift
+
+if [[ $# > 0 ]]
+then
+    echo
+    echo "too many arguments; run with -h for help" >&2
+    echo
+    exit 1
+fi
+
+if ! type keytool > /dev/null 2>&1 ; then
+    echo "keytool not found; should be included with your JRE/JDK" >&2
+    exit 1
+fi
+
+if ! type openssl > /dev/null 2>&1 ; then
+    echo "openssl not found" >&2
+    exit 1
+fi
+
+keystore=$name.jks
+cert=$name.crt
+key=$name.key
+pem=$name.pem
+
+msg() {
+    echo "--- $*"
+}
+
+# ============================================================================
+
+msg "creating Java keystore"
+
+rm -f $keystore
+keytool -genkeypair \
+    -keystore $keystore -storepass "$pass" \
+    -keypass "$pass" -keyalg RSA \
+    -alias $name \
+    -dname "CN=locahost,O=${name}" \
+    || exit
+
+
+msg "extracting certificate from Java keystore"
+
+rm -f $cert
+keytool -export -file $cert -rfc \
+    -alias $name -keystore $keystore -storepass "$pass" || exit
+
+
+msg "extracting certificate private key from Java keystore"
+
+keytool -importkeystore \
+    -srckeystore $keystore -srcstorepass "$pass" \
+    -destkeystore $name.tmp -deststoretype PKCS12 -deststorepass "$pass" || exit
+openssl pkcs12 -in $name.tmp -nocerts -nodes -passin "pass:${pass}" -out $key || exit
+rm -f $name.tmp
+
+
+msg "creating key/cert PEM"
+
+rm -f $pem
+cat $key $cert > $pem
+
+echo
+echo "  keystore          $keystore               # JVM endpoint (set javax.net.ssl.trustStore to this)"
+echo "  certificate       $cert               # certficate extracted from keystore"
+echo "  key               $key               # certifacte private key extracted from keystore"
+echo "  certificate/key   $pem               # remote endpoint (per your endpoint documentation)"
+echo
