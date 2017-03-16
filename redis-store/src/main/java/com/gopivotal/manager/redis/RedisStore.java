@@ -337,7 +337,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
     }
 
     @Override
-    public boolean isSSLEnabled() {
+    public boolean isSslEnabled() {
         return this.lockTemplate.withReadLock(new LockTemplate.LockedOperation<Boolean>() {
 
             @Override
@@ -353,11 +353,12 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
      *
      * @param enabled if <tt>true</tt>, connect over SSL
      */
-    public void setSSLEnabled(final boolean enabled) {
+    public void setSslEnabled(final boolean enabled) {
         this.lockTemplate.withWriteLock(new LockTemplate.LockedOperation<Void>() {
 
             @Override
             public Void invoke() {
+                RedisStore.this.logger.info("setting sslEnabled={}", enabled);
                 boolean previous = RedisStore.this.sslEnabled;
                 RedisStore.this.sslEnabled = enabled;
                 RedisStore.this.propertyChangeSupport.notify("sslEnabled", previous, RedisStore.this.sslEnabled);
@@ -639,7 +640,8 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
                     poolConfig.setMaxTotal(RedisStore.this.connectionPoolSize);
 
                     RedisStore.this.jedisPool = new JedisPool(poolConfig, RedisStore.this.host, RedisStore.this.port,
-                            RedisStore.this.timeout, RedisStore.this.password, RedisStore.this.database);
+                            RedisStore.this.timeout, RedisStore.this.password, RedisStore.this.database,
+                            RedisStore.this.sslEnabled);
                 }
 
 

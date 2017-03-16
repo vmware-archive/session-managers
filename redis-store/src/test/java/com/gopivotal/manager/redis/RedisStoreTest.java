@@ -246,9 +246,9 @@ public final class RedisStoreTest {
 
     @Test
     public void ssl() {
-        this.store.setSSLEnabled(true);
+        this.store.setSslEnabled(true);
 
-        assertEquals(true, this.store.isSSLEnabled());
+        assertEquals(true, this.store.isSslEnabled());
         verify(this.propertyChangeSupport).notify("sslEnabled", false, true);
     }
 

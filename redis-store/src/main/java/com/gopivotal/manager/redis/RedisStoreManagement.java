@@ -64,7 +64,7 @@ public interface RedisStoreManagement {
      *
      * @return whether Redis SSL enabled
      */
-    boolean isSSLEnabled();
+    boolean isSslEnabled();
 
     /**
      * Returns the Redis connection timeout
