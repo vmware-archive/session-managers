@@ -3,8 +3,6 @@ language: java
 script: |
     if [[ "$RELEASE_BUILD" == 'true' && "$TRAVIS_SECURE_ENV_VARS" == 'true' ]] ; then
       mvn deploy
-    elif [[ "$SONAR_BUILD" == 'true' && "$TRAVIS_SECURE_ENV_VARS" == 'true' ]] ; then
-      mvn sonar:sonar -Dsonar.host.url="$SONAR_HOST_URL" -Dsonar.login="$SONAR_LOGIN" -Dsonar.password="$SONAR_PASSWORD" -Dsonar.jdbc.url="jdbc:mysql://$SONAR_JDBC_URL?useUnicode=true&characterEncoding=utf8&rewriteBatchedStatements=true" -Dsonar.jdbc.username="$SONAR_JDBC_USERNAME" -Dsonar.jdbc.password="$SONAR_JDBC_PASSWORD"
     else
       mvn test
     fi
@@ -16,12 +14,6 @@ env:
   global:
     - secure: NKDOZ8D+GbTpoM0uiI8gWskE2kAKWpPKhs3/uJjmgkorkkG1JmWR5XOVVnvz4epBYETuuauAyAmDD58y8iFS9Bh74H6pJs9slZOgy4vO7t1yEu7QB/sdqn8FN/w+IWda9NO9YhhZ/piDxZUk/ttpIiOZgSWUizMBZx/lcDmJK94= # AWS_ACCESS_KEY
     - secure: CobYK3TnNxOWNlLfvnv93tIt/xjFbRYsfBn+5l/l2UMli/uFoYTQVRQWyiWdvW/mgKUiYKPhloqwueNNWgBteS7NCX0PCQwO/9k/PQhOQ4A0/M3Jzbn8aG2Cd9Ai3XmhQpFVwA48JCwlNUqG0INZssFZ9l9oUOZyIyRByypyr/A= # AWS_ACCESS_KEY
-    - secure: VgRqxTra79+YbXmRYQy13fClpmKtJLIxX94sLaNyEaqpa7XBvG3lbTnxyUCUAUVnN5+juxgRYuuy88iKuXsV7G/jDajwPDX6SX6hdSrN9/YT7Z6xz6tmiWIaQThFwjhpgLPhSYtXcFsTzCWOuH0kgL+tP3NK6F1oZXdthzD0CUo= # SONAR_HOST_URL
-    - secure: Gw/Y7QFpcmUPnrToQG2eG2zPnRSD+G9yhCwLjNvLQqrJvzNb4cTYYH13wbaOwfDAzD6sN6NZq2pk6YBEKogo142dEfagiX6flC4mG+BhuIrE453lK/iF/ky/TJpJ6tmxdgodFYyHf67VqVN3IyR9Jwr+mQynLadfktCLcPa8Xrk= # SONAR_LOGIN
-    - secure: VV289Onhmz0RORTNBKZxTnKqUzI/nZUN/ozZZDjTQSMNHbhwiG8iKETOERQXtFVJXXVy/k4t6qgpRk41RdRuSu4s0EZfK0tuhkhxpsE7vSOtGv5FSJ7kdTjsiW+cnx/kbJ/8IC52GIa/1IJwEH4R6dBso2DZEt01SJ+Y1ltBOHU= # SONAR_PASSWORD
-    - secure: GkOyf+iM6zV3H+AX4TvptxPeiLLOftL/bA1I8xe8DKPwEYFf5+B1jg6N+WPEowvrii2HGfH0RGDx3HzGkFJ7xRQ28/Y2/BkMpfBQw2uy2RMHNP2vw8iIyyKaPjRDzDp4su7NS/hBhcqJrc7CTbH/46y1cU84mxSp60D0VEd8F8U= # SONAR_JDBC_URL
-    - secure: EyaKYV6XEPRcGpH6I07fNpne0zsYQNCHtyBbRKm1iWWUloJQsvfYWAoXYa0SdrCRICQFgMrUQXa+XrcSo7/9NPEnoWGErSXPlGyCCi5sNvEBbwmqKb82PJb6klxw8c/g/TxpA6brtFusRg1a6IejWiiUlN8YHPJc2+xqzhSmu5Q= # SONAR_JDBC_USERNAME
-    - secure: Wrf9j/JJPUcin/KiR+0eyAdUYiPUpbydgLDAYZzljNXYqaxVRDE/a8H6Qh5YkID/z9YN7V+jmVnHEqZxnj08VnNJwoZspBL8IiB5PSKWHsWAcSkdPIuTk21i2ufAuBMJzVhRnhiQaSQPYnTdOMjFm2QLnDKdiEXAc4soKFeo4AU= # SONAR_JDBC_PASSWORD
   matrix:
     - RELEASE_BUILD=true
     - QUICK_BUILD=true
