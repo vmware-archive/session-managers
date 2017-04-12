@@ -31,16 +31,11 @@ import org.apache.catalina.session.StandardSession;
 import org.apache.catalina.valves.RemoteIpValve;
 import org.junit.Before;
 import org.junit.Test;
-import redis.clients.jedis.BuilderFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.Protocol;
-import redis.clients.jedis.Response;
-import redis.clients.jedis.Transaction;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -49,15 +44,17 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public final class RedisStoreTest {
 
-    private final Jedis jedis = mock(Jedis.class);
-
-    private final JedisPool jedisPool = mock(JedisPool.class);
+    private final JedisClient jedisClient = mock(JedisClient.class);
 
     private final JmxSupport jmxSupport = mock(JmxSupport.class);
 
@@ -69,27 +66,25 @@ public final class RedisStoreTest {
 
     private final PropertyChangeSupport propertyChangeSupport = mock(PropertyChangeSupport.class);
 
-    private final RedisStore store = new RedisStore(this.jedisPool, this.jmxSupport, this.propertyChangeSupport,
-            this.sessionSerializationUtils);
-
-    private final Transaction transaction = mock(StubTransaction.class);
+    private final RedisStore store = new RedisStore(this.jmxSupport, this.propertyChangeSupport,
+            this.sessionSerializationUtils, jedisClient);
 
     @Test
     public void clear() throws IOException {
         Set<String> sessionIds = new HashSet<>();
         sessionIds.add("test-id");
-        when(this.jedis.smembers("sessions")).thenReturn(sessionIds);
+        when(this.jedisClient.getSessions("sessions")).thenReturn(sessionIds);
 
         this.store.clear();
 
-        verify(this.transaction).srem("sessions", "test-id");
-        verify(this.transaction).del(new String[]{"test-id"});
-        verify(this.transaction).exec();
+        verify(this.jedisClient).clean("sessions");
     }
 
     @Test
     public void clearJedisConnectionException() {
-        when(this.jedisPool.getResource()).thenThrow(new JedisConnectionException("test-message"));
+        doThrow(new JedisConnectionException("test-message"))
+                .when(this.jedisClient)
+                .clean("sessions");
 
         this.store.clear();
     }
@@ -117,20 +112,18 @@ public final class RedisStoreTest {
 
     @Test
     public void getSize() throws IOException {
-        Response<Long> response = new Response<>(BuilderFactory.LONG);
-        response.set((long) Integer.MAX_VALUE);
-
-        when(this.transaction.scard("sessions")).thenReturn(response);
+        when(this.jedisClient.count("sessions")).thenReturn(Integer.MAX_VALUE);
 
         int result = this.store.getSize();
 
         assertEquals(Integer.MAX_VALUE, result);
-        verify(this.transaction).exec();
     }
 
     @Test
     public void getSizeJedisConnectionException() {
-        when(this.jedisPool.getResource()).thenThrow(new JedisConnectionException("test-message"));
+        doThrow(new JedisConnectionException("test-message"))
+                .when(this.jedisClient)
+                .count("sessions");
 
         int result = this.store.getSize();
 
@@ -161,20 +154,20 @@ public final class RedisStoreTest {
 
     @Test
     public void keys() throws IOException {
-        Response<Set<String>> response = new Response<>(BuilderFactory.STRING_SET);
-        response.set(Arrays.asList("test-id".getBytes(Protocol.CHARSET)));
-
-        when(this.transaction.smembers("sessions")).thenReturn(response);
+        Set<String> response = new HashSet<String>(Arrays.asList("test-id"));
+        when(this.jedisClient.getSessions("sessions")).thenReturn(response);
 
         String[] result = this.store.keys();
 
+        assertEquals(1, result.length);
         assertArrayEquals(new String[]{"test-id"}, result);
-        verify(this.transaction).exec();
     }
 
     @Test
     public void keysJedisConnectionException() {
-        when(this.jedisPool.getResource()).thenThrow(new JedisConnectionException("test-message"));
+        doThrow(new JedisConnectionException("test-message"))
+                .when(this.jedisClient)
+                .getSessions("sessions");
 
         String[] result = this.store.keys();
 
@@ -185,23 +178,20 @@ public final class RedisStoreTest {
     public void load() throws IOException {
         Session session = new StandardSession(this.manager);
         session.setId("test-id");
+        byte[] response = this.sessionSerializationUtils.serialize(session);
 
-        Response<byte[]> response = new Response<>(BuilderFactory.BYTE_ARRAY);
-        response.set(this.sessionSerializationUtils.serialize(session));
-
-        when(this.transaction.get("test-id".getBytes(Protocol.CHARSET))).thenReturn(response);
+        when(this.jedisClient.get("test-id")).thenReturn(response);
 
         Session result = this.store.load("test-id");
 
         assertEquals(session.getId(), result.getId());
-        verify(this.transaction).exec();
     }
 
     @Test
-    public void loadJedisConnectionException() {
-        when(this.jedisPool.getResource()).thenThrow(new JedisConnectionException("test-message"));
-
+    public void loadJedisConnectionException() throws UnsupportedEncodingException {
+        when(this.jedisClient.get("test-id")).thenThrow(new JedisConnectionException("test-message"));
         this.store.setManager(this.manager);
+
         Session result = this.store.load("test-id");
 
         assertEquals(result.getId(), result.getId());
@@ -246,14 +236,14 @@ public final class RedisStoreTest {
     public void remove() throws IOException {
         this.store.remove("test-id");
 
-        verify(this.transaction).srem("sessions", "test-id");
-        verify(this.transaction).del("test-id");
-        verify(this.transaction).exec();
+        verify(this.jedisClient).del("sessions", "test-id");
     }
 
     @Test
     public void removeJedisConnectionException() {
-        when(this.jedisPool.getResource()).thenThrow(new JedisConnectionException("test-message"));
+        doThrow(new JedisConnectionException("test-message"))
+                .when(this.jedisClient)
+                .del("sessions", "test-id");
 
         this.store.remove("test-id");
     }
@@ -265,27 +255,19 @@ public final class RedisStoreTest {
 
         this.store.save(session);
 
-        verify(this.transaction).set(session.getId().getBytes(Protocol.CHARSET), this.sessionSerializationUtils.serialize
-                (session));
-        verify(this.transaction).sadd("sessions", "test-id");
-        verify(this.transaction).exec();
+        verify(this.jedisClient).set(session.getId(), "sessions", this.sessionSerializationUtils.serialize(session), session.getMaxInactiveInterval());
     }
 
     @Test
-    public void saveJedisConnectionException() {
+    public void saveJedisConnectionException() throws UnsupportedEncodingException {
         Session session = new StandardSession(this.manager);
         session.setId("test-id");
 
-        when(this.jedisPool.getResource()).thenThrow(new JedisConnectionException("test-message"));
+        doThrow(new JedisConnectionException("test-message"))
+                .when(this.jedisClient)
+                .set(anyString(), anyString(), any((byte[].class)), eq(session.getMaxInactiveInterval()));
 
         this.store.save(session);
-
-    }
-
-    @Before
-    public void setupJedis() throws Exception {
-        when(this.jedisPool.getResource()).thenReturn(this.jedis);
-        when(this.jedis.multi()).thenReturn(this.transaction);
     }
 
     @Before
@@ -300,15 +282,30 @@ public final class RedisStoreTest {
     }
 
     @Test
-    public void startInternal() {
+    public void startInternalWithPool() throws IOException {
         this.store.setHost("test.host");
         this.store.setManager(this.manager);
 
         this.store.startInternal();
 
-        verify(this.jedis).close();
+        verify(this.jedisClient).close();
         verify(this.jmxSupport).register("Catalina:type=Store,context=/test-context-name,host=test-host-name," +
                 "name=RedisStore", this.store);
+        assertEquals(this.store.jedisClient.getClass(), JedisNodeClient.class);
+    }
+
+    @Test
+    public void startInternalWithCluster() throws IOException {
+        this.store.setHost("test.host:123;test.host2:456");
+        this.store.setManager(this.manager);
+        this.store.setCluster(true);
+
+        this.store.startInternal();
+
+        verify(this.jedisClient).close();
+        verify(this.jmxSupport).register("Catalina:type=Store,context=/test-context-name,host=test-host-name," +
+                "name=RedisStore", this.store);
+        assertEquals(this.store.jedisClient.getClass(), JedisClusterClient.class);
     }
 
     @Test
@@ -322,9 +319,9 @@ public final class RedisStoreTest {
     }
 
     @Test
-    public void stopInternalNoPool() {
-        RedisStore alternateStore = new RedisStore(null, this.jmxSupport, this.propertyChangeSupport,
-                this.sessionSerializationUtils);
+    public void stopInternalNoTemplate() {
+        RedisStore alternateStore = new RedisStore(this.jmxSupport, this.propertyChangeSupport,
+                this.sessionSerializationUtils, null);
         alternateStore.setManager(this.manager);
 
         alternateStore.stopInternal();
@@ -362,49 +359,4 @@ public final class RedisStoreTest {
         verify(this.propertyChangeSupport).notify("password", null, null);
         verify(this.propertyChangeSupport).notify("database", 0, 7);
     }
-
-
-    private static class StubTransaction extends Transaction {
-
-        @Override
-        public Response<Long> del(String key) {
-            return null;
-        }
-
-        @Override
-        public Response<Long> del(String... keys) {
-            return null;
-        }
-
-        @Override
-        public Response<byte[]> get(byte[] key) {
-            return null;
-        }
-
-        @Override
-        public Response<Long> sadd(String key, String... member) {
-            return null;
-        }
-
-        @Override
-        public Response<Long> scard(String key) {
-            return null;
-        }
-
-        @Override
-        public Response<String> set(byte[] key, byte[] value) {
-            return null;
-        }
-
-        @Override
-        public Response<Set<String>> smembers(String key) {
-            return null;
-        }
-
-        @Override
-        public Response<Long> srem(String key, String... member) {
-            return null;
-        }
-    }
-
 }

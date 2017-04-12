@@ -33,6 +33,7 @@ public interface RedisStoreManagement {
 
     /**
      * Returns the Redis connection database
+     * Will be ignore in case of cluster
      *
      * @return the Redis connection database
      */
@@ -40,6 +41,11 @@ public interface RedisStoreManagement {
 
     /**
      * Returns the Redis connection host
+     * In case of cluster must follow this pattern:
+     * <p>
+     *     <host>:<port>;<host>:<port>;<host>:<port>
+     * </p>
+     * All hosts, including the master, should be provided
      *
      * @return the Redis connection host
      */
@@ -54,6 +60,7 @@ public interface RedisStoreManagement {
 
     /**
      * Returns the Redis connection port
+     * Will be ignore in case of cluster
      *
      * @return the Redis connection port
      */
@@ -72,4 +79,10 @@ public interface RedisStoreManagement {
      * @return the Redis connection uri
      */
     String getUri();
+
+    /**
+     * Returns if it is a redis cluster
+     * @return redis cluster indication
+     */
+    boolean getCluster();
 }

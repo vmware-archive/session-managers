@@ -80,12 +80,13 @@ Configure `redis-store` using `<Store />` attributes:
 | Attribute | Default | Description
 | --- | ------- | -----------
 | `connectionPoolSize` | `-1` | Maximum number of concurrent connections
-| `database` | `0` | Redis database
-| `host` | `localhost` | Redis host
+| `database` | `0` | Redis database. Cluster will ignore this property
+| `host` | `localhost` | Redis host. Cluster should follow this pattern: \<host>:\<port>;\<host>:\<port>;\<host>:\<port>
 | `password` | `<none>` | Redis AUTH password
-| `port` | `6379` | Redis port
+| `port` | `6379` | Redis port. Also ignored in cluster
 | `timeout` | `2000` | Connection timeout (in milliseconds)
-| `uri` | `<none>` | Connection URI, e.g. `redis://username:password@localhost:6370/0`
+| `uri` | `<none>` | Connection URI, e.g. `redis://username:password@localhost:6370/0`. Invalid for cluster configuration
+| `cluster` | `false` | Flag for cluster configuration
 
 Example: set the maximum number of concurrent connections to 20:
 ```xml
