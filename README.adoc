@@ -1,0 +1,23 @@
+= Pivotal Tomcat Session Managers
+Pivotal AppSuite
+:toc: preamble
+:toclevels: 1
+:!toc-title:
+:uri-contributing: link:CONTRIBUTING.adoc
+:uri-apache-license: http://www.apache.org/licenses/LICENSE-2.0
+
+This project provides implementations of Tomcat session management.
+
+== Goals
+
+* Provide a framework for implementing Tomcat session managers
+* Provide Tomcat session manager implementations for popular data stores
+* Support multiple versions of Tomcat
+
+== Contributing
+
+Pull requests are welcome. See the {uri-contributing}[contributor guidelines] for details.
+
+== License
+
+Free use of this project is granted under the terms of the {uri-apache-license}[Apache License, Version 2.0]
