@@ -14,6 +14,29 @@ This project provides implementations of Tomcat session management.
 * Provide Tomcat session manager implementations for popular data stores
 * Support multiple versions of Tomcat
 
+== Requirements
+
+* JDK 7 or higher
+
+== Building
+
+[source,sh]
+----
+% git clone https://github.com/pivotalsoftware/session-managers
+% cd session-managers
+% ./gradlew assemble
+----
+
+The project targets Java 7. If you use JDK 8 to run Gradle, you may see the following warning:
+[source,sh]
+----
+:common:compileJava
+warning: [options] bootstrap class path not set in conjunction with -source 1.7
+1 warning
+----
+
+If you have JDK 7 available, set the env var `JDK7_HOME` to its path and it will be used for the Java compile bootstrap.
+
 == Contributing
 
 Pull requests are welcome. See the {uri-contributing}[contributor guidelines] for details.

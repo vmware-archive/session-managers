@@ -1,0 +1,18 @@
+subprojects {
+    apply plugin: 'java'
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        testCompile group: 'junit', name: 'junit', version: junitVersion
+    }
+
+    sourceCompatibility = "1.${javaVersion}"
+    targetCompatibility = "1.${javaVersion}"
+    if (System.getenv()["JDK${javaVersion}_HOME"])
+        compileJava.options.bootClasspath = "${System.getenv()["JDK${javaVersion}_HOME"]}/jre/lib/rt.jar"
+
+    jar.baseName = "pivotal-tomcat-session-manager"
+}
