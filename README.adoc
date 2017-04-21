@@ -50,6 +50,17 @@ In IntelliJ, select _File->Open..._ and select the project directory.
 
 If prompted, _Import Gradle project_ to enable the _Gradle Tool Window_.  Using the default options should work, although a JDK 7 for the _Gradle JVM_ is recommended.
 
+=== Eclipse
+
+[source,sh]
+----
+% ./gradle eclipse
+----
+
+_These instructions work for Eclipse Neon._
+
+In Eclipse, select _File->Open Projects from File System..._ and select the project directory.  Click _Finish_ to import the projects.
+
 == Contributing
 
 Pull requests are welcome. See the {uri-contributing}[contributor guidelines] for details.

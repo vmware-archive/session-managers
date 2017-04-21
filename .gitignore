@@ -6,3 +6,8 @@
 /tomcat-session-managers.iml
 /tomcat-session-managers.ipr
 /tomcat-session-managers.iws
+
+# Eclipse
+.classpath
+.project
+.settings

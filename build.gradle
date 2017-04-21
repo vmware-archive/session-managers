@@ -3,6 +3,14 @@ apply plugin: 'idea'
 subprojects {
     apply plugin: 'java'
 
+    apply plugin: 'eclipse'
+    eclipse {
+        project.name = "session-managers-${eclipse.project.name}"
+        classpath {
+            defaultOutputDir = file('build/eclipse')
+        }
+    }
+
     repositories {
         mavenCentral()
     }
