@@ -1,0 +1,5 @@
+language: java
+script: |
+  ./gradlew assemble
+jdk:
+- openjdk7
