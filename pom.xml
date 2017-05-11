@@ -24,7 +24,7 @@
 
     <groupId>com.gopivotal.manager</groupId>
     <artifactId>session-managers</artifactId>
-    <version>1.2.1.BUILD-SNAPSHOT</version>
+    <version>1.2.1.RELEASE</version>
     <packaging>pom</packaging>
 
     <organization>
@@ -170,7 +170,7 @@
                                 <contextUrl>https://repo.spring.io</contextUrl>
                                 <username>{{ARTIFACTORY_USERNAME}}</username>
                                 <password>{{ARTIFACTORY_PASSWORD}}</password>
-                                <repoKey>{{ARTIFACTORY_REPO_KEY|"libs-milestone-local"}}</repoKey>
+                                <repoKey>{{ARTIFACTORY_REPO_KEY|"libs-release-local"}}</repoKey>
                                 <snapshotRepoKey>{{ARTIFACTORY_SNAPSHOT_REPO_KEY|"libs-snapshot-local"}}</snapshotRepoKey>
                             </publisher>
                         </configuration>
