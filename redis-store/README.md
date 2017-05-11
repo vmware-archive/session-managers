@@ -23,7 +23,7 @@ Supported Tomcat and Java versions:
 
 ### Maven/Gradle
 
-| Version 1.3.x+ | |
+| Version 1.2.1+, 1.3.x+ | |
 | --- | --- |
 | repository | `https://repo.spring.io/release/` |
 | group | `com.gopivotal.manager` |
@@ -40,8 +40,10 @@ Supported Tomcat and Java versions:
 
 ### Links
 
+* [1.3.2.RELEASE](https://repo.spring.io/libs-release-local/com/gopivotal/manager/redis-store/1.3.2.RELEASE/redis-store-1.3.2.RELEASE.jar)
 * [1.3.1.RELEASE](https://repo.spring.io/libs-release-local/com/gopivotal/manager/redis-store/1.3.1.RELEASE/redis-store-1.3.1.RELEASE.jar)
 * [1.3.0.RELEASE](https://repo.spring.io/libs-release-local/com/gopivotal/manager/redis-store/1.3.0.RELEASE/redis-store-1.3.0.RELEASE.jar)
+* [1.2.1.RELEASE](https://repo.spring.io/libs-release-local/com/gopivotal/manager/redis-store/1.2.1.RELEASE/redis-store-1.2.1.RELEASE.jar)
 * [1.2.0.RELEASE](http://maven.gopivotal.com.s3.amazonaws.com/release/com/gopivotal/manager/redis-store/1.2.0.RELEASE/redis-store-1.2.0.RELEASE.jar)
 
 ## Building from Source
