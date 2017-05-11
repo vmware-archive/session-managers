@@ -1,27 +1,24 @@
----
 language: java
 script: |
-    if [[ "$RELEASE_BUILD" == 'true' && "$TRAVIS_SECURE_ENV_VARS" == 'true' ]] ; then
-      mvn deploy
-    else
-      mvn test
-    fi
+  if [[ "$RELEASE_BUILD" == 'true' && "$TRAVIS_SECURE_ENV_VARS" == 'true' ]] ; then
+    mvn deploy
+  else
+    mvn test
+  fi
 jdk:
-  - openjdk6
-  - openjdk7
-  - oraclejdk8
+- openjdk6
+- openjdk7
+- oraclejdk8
 env:
   global:
-    - secure: NKDOZ8D+GbTpoM0uiI8gWskE2kAKWpPKhs3/uJjmgkorkkG1JmWR5XOVVnvz4epBYETuuauAyAmDD58y8iFS9Bh74H6pJs9slZOgy4vO7t1yEu7QB/sdqn8FN/w+IWda9NO9YhhZ/piDxZUk/ttpIiOZgSWUizMBZx/lcDmJK94= # AWS_ACCESS_KEY
-    - secure: CobYK3TnNxOWNlLfvnv93tIt/xjFbRYsfBn+5l/l2UMli/uFoYTQVRQWyiWdvW/mgKUiYKPhloqwueNNWgBteS7NCX0PCQwO/9k/PQhOQ4A0/M3Jzbn8aG2Cd9Ai3XmhQpFVwA48JCwlNUqG0INZssFZ9l9oUOZyIyRByypyr/A= # AWS_ACCESS_KEY
+  - secure: NLOleRANVTErubOCrf3AnljVYxzrz3Os5atObx4cc1J10JUszNYY0QhNiv+2rlK96fHdER7fkf+s+FnaQcisDDUSFMZgzNAdlFvruPnwBBw/3qHLGix0UiTLP/jc6nWQK77hFwsprHvmVdlCMymHQpm9Gw917rTg21kOEM50w98= # ARTIFACTORY_USERNAME
+  - secure: cRru6TUOkGyszzlvWPF1tNXkLeq3cSSkkxmwRSxgTmHkgzxmA5ZgR4mnT2pPPuGJ5nuOR0MBeplsl/KxSXSbDPqG0nxODVmvDq5j2Y8sZgSZY8mCYt7f/oHo6l9KjSPhx/hbo6eiWHVY59nQZ3m71iJo2TdcTu/+zYJDnLt5gjk= # ARTIFACTORY_PASSWORD
   matrix:
-    - RELEASE_BUILD=true
-    - QUICK_BUILD=true
+  - RELEASE_BUILD=true
+  - QUICK_BUILD=true
 matrix:
   exclude:
-    - jdk: openjdk6
-      env: RELEASE_BUILD=true
-    - jdk: openjdk6
-    - jdk: oraclejdk8
-      env: RELEASE_BUILD=true
-    - jdk: oraclejdk8
+  - jdk: openjdk6
+    env: RELEASE_BUILD=true
+  - jdk: oraclejdk8
+    env: RELEASE_BUILD=true
