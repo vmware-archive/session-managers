@@ -14,22 +14,6 @@ Each branch, release, and pull request kicks off builds on [Travis CI](https://t
 ## Logging
 This project uses [SLF4J][s] and defaults to Java Utils Logging (JUL) binding
 
-In case you want to use another one you must to package your binder and explicit remove the JUL dependency:
-
-```xml
-            <dependency>
-                <groupId>com.gopivotal.manager</groupId>
-                <artifactId>session-managers</artifactId>
-                <version>${session-managers.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-jdk14</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-```
-
 ## License
 This project is released under the [Apache License, Version 2.0][a].
 

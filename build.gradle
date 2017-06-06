@@ -1,0 +1,57 @@
+buildscript {
+
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.4'
+    }
+
+}
+
+subprojects {
+
+    apply plugin: 'java'
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        compile "org.apache.tomcat:tomcat-catalina:${tomcatVersion}"
+        compile "org.slf4j:slf4j-api:${slf4jVersion}"
+        testCompile "junit:junit:${junitVersion}"
+        testCompile "org.mockito:mockito-core:${mockitoVersion}"
+    }
+
+    sourceCompatibility = "1.${javaVersion}"
+    targetCompatibility = "1.${javaVersion}"
+    compileJava {
+        options.encoding = 'UTF-8'
+    }
+
+    jar {
+        manifest {
+            attributes(
+                    'Implementation-Title': project.name,
+                    'Implementation-Version': project.version,
+                    'Implementation-Vendor': 'Pivotal',
+                    'Implementation-Vendor-Id': project.group
+            )
+        }
+    }
+
+    if (name != 'common') {
+        apply plugin: 'com.github.johnrengelman.shadow'
+        shadowJar {
+            dependencies {
+                exclude(dependency('org.apache.tomcat::'))
+            }
+        }
+        assemble {
+            dependsOn shadowJar
+        }
+    }
+
+}

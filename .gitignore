@@ -1,5 +1,5 @@
-dependency-reduced-pom.xml
-target
+/.gradle
+build/
 
 # Eclipse
 .classpath
