@@ -42,16 +42,4 @@ subprojects {
         }
     }
 
-    if (name != 'common') {
-        apply plugin: 'com.github.johnrengelman.shadow'
-        shadowJar {
-            dependencies {
-                exclude(dependency('org.apache.tomcat::'))
-            }
-        }
-        assemble {
-            dependsOn shadowJar
-        }
-    }
-
 }

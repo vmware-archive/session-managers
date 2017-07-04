@@ -2,3 +2,15 @@ dependencies {
     compile project(':common')
     compile "redis.clients:jedis:${redisVersion}"
 }
+
+apply plugin: 'com.github.johnrengelman.shadow'
+
+shadowJar {
+    dependencies {
+        exclude(dependency('org.apache.tomcat::'))
+    }
+}
+
+assemble {
+    dependsOn shadowJar
+}
