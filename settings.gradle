@@ -1,3 +1,4 @@
 rootProject.name = 'session-managers'
 include ':common'
 include ':redis-store'
+include ':integrationTest'

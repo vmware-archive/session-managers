@@ -1,0 +1,88 @@
+plugins {
+    id "de.undercouch.download" version "3.2.0"
+}
+
+apply plugin: 'groovy'
+
+def distfileDir = new File(projectDir, 'distfiles')
+
+def tomcatDistfile = new File(distfileDir, "apache-tomcat-${tomcatVersion}.tar.gz")
+def slf4jDistfile = new File(distfileDir, "slf4j-${slf4jVersion}.tar.gz")
+def distrosDir = new File(buildDir, 'distros')
+
+sourceSets {
+    main {
+        groovy {
+            srcDirs 'src/main/steps'
+        }
+    }
+}
+
+dependencies {
+    compile "org.codehaus.groovy:groovy-all:${groovyVersion}"
+    compile "info.cukes:cucumber-groovy:${cucumberVersion}"
+    compile "commons-io:commons-io:${commonsIOVersion}"
+    compile "com.github.docker-java:docker-java:${dockerJavaVersion}"
+    runtime "ch.qos.logback:logback-classic:${logbackVersion}"
+}
+
+task tomcat() {
+    description = 'Installs the Tomcat distribution.'
+    group = 'Build'
+    doLast {
+        if (!tomcatDistfile.exists()) {
+            download {
+                src "${tomcatDistfileMirror}/tomcat-${tomcatVersion[0]}/v${tomcatVersion}/bin/${tomcatDistfile.name}"
+                dest tomcatDistfile
+            }
+        }
+        if (!slf4jDistfile.exists()) {
+            download {
+                src "${slf4jDistfileMirror}/${slf4jDistfile.name}"
+                dest slf4jDistfile
+            }
+        }
+        copy {
+            from tarTree(tomcatDistfile)
+            into distrosDir
+        }
+        copy {
+            from tarTree(slf4jDistfile)
+            into distrosDir
+        }
+        copy {
+            from new File(distrosDir, "slf4j-${slf4jVersion}/slf4j-jdk14-${slf4jVersion}.jar")
+            into new File(distrosDir, "apache-tomcat-${tomcatVersion}/lib")
+        }
+    }
+}
+
+task integrationTest() {
+    description = 'Runs the integration tests.'
+    group = 'Verification'
+    dependsOn assemble, tomcat , ':redis-store:assemble'
+    doLast {
+        javaexec {
+            main = 'cucumber.api.cli.Main'
+            classpath = project.sourceSets.main.runtimeClasspath
+            systemProperties['io.pivotal.appsuite.qa.project.rootdir'] = project.rootDir
+            systemProperties['io.pivotal.appsuite.qa.project.version'] = project.version
+            systemProperties['io.pivotal.appsuite.qa.cucumber.sandboxes'] = new File(buildDir, 'sandboxes').path
+            systemProperties['io.pivotal.appsuite.qa.cucumber.tomcat.distro'] =
+                    new File(project.buildDir, "distros/apache-tomcat-${tomcatVersion}")
+            systemProperties['io.pivotal.appsuite.qa.cucumber.webapp'] = new File(projectDir, 'src/main/webapp').path
+            systemProperties['io.pivotal.appsuite.qa.cucumber.redis.version'] = project.redisVersion
+            args = [
+                    '--plugin', 'pretty',
+                    '--glue', 'src/main/steps',
+                    'src/main/features',
+            ]
+            args += ['--tags', '~@disabled']
+            args += ['--tags', "${project.hasProperty('wip') ? '' : '~'}@wip"]
+        }
+    }
+}
+
+check {
+    dependsOn integrationTest
+}

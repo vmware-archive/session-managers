@@ -1,6 +1,6 @@
 dependencies {
     compile project(':common')
-    compile "redis.clients:jedis:${redisVersion}"
+    compile "redis.clients:jedis:${jedisVersion}"
 }
 
 apply plugin: 'com.github.johnrengelman.shadow'
