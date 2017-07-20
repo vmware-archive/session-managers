@@ -6,7 +6,7 @@ script: |
     mvn test
   fi
 jdk:
-- oraclejdk6
+- oraclejdk7
 env:
   global:
   - secure: NLOleRANVTErubOCrf3AnljVYxzrz3Os5atObx4cc1J10JUszNYY0QhNiv+2rlK96fHdER7fkf+s+FnaQcisDDUSFMZgzNAdlFvruPnwBBw/3qHLGix0UiTLP/jc6nWQK77hFwsprHvmVdlCMymHQpm9Gw917rTg21kOEM50w98= # ARTIFACTORY_USERNAME
