@@ -54,6 +54,8 @@ import static org.mockito.Mockito.when;
 
 public final class RedisStoreTest {
 
+    private static final String SESSIONS_KEY = "sessions_";
+    
     private final JedisClient jedisClient = mock(JedisClient.class);
 
     private final JmxSupport jmxSupport = mock(JmxSupport.class);
@@ -72,19 +74,19 @@ public final class RedisStoreTest {
     @Test
     public void clear() throws IOException {
         Set<String> sessionIds = new HashSet<>();
-        sessionIds.add("test-id");
-        when(this.jedisClient.getSessions("sessions")).thenReturn(sessionIds);
+        sessionIds.add(SESSIONS_KEY + "test-id");
+        when(this.jedisClient.getSessions(SESSIONS_KEY)).thenReturn(sessionIds);
 
         this.store.clear();
 
-        verify(this.jedisClient).clean("sessions");
+        verify(this.jedisClient).clean(SESSIONS_KEY);
     }
 
     @Test
     public void clearJedisConnectionException() {
         doThrow(new JedisConnectionException("test-message"))
                 .when(this.jedisClient)
-                .clean("sessions");
+                .clean(SESSIONS_KEY);
 
         this.store.clear();
     }
@@ -112,7 +114,7 @@ public final class RedisStoreTest {
 
     @Test
     public void getSize() throws IOException {
-        when(this.jedisClient.count("sessions")).thenReturn(Integer.MAX_VALUE);
+        when(this.jedisClient.count(SESSIONS_KEY)).thenReturn(Integer.MAX_VALUE);
 
         int result = this.store.getSize();
 
@@ -123,13 +125,21 @@ public final class RedisStoreTest {
     public void getSizeJedisConnectionException() {
         doThrow(new JedisConnectionException("test-message"))
                 .when(this.jedisClient)
-                .count("sessions");
+                .count(SESSIONS_KEY);
 
         int result = this.store.getSize();
 
         assertEquals(Integer.MIN_VALUE, result);
     }
 
+    @Test
+    public void sessionKeyPrefix() {
+        this.store.setSessionKeyPrefix("_rsm_");
+
+        assertEquals("_rsm_", this.store.getSessionKeyPrefix());
+        verify(this.propertyChangeSupport).notify("sessionKeyPrefix", SESSIONS_KEY, "_rsm_");
+    }
+    
     @Test
     public void host() {
         this.store.setHost("test-host");
@@ -154,20 +164,20 @@ public final class RedisStoreTest {
 
     @Test
     public void keys() throws IOException {
-        Set<String> response = new HashSet<String>(Arrays.asList("test-id"));
-        when(this.jedisClient.getSessions("sessions")).thenReturn(response);
+        Set<String> response = new HashSet<String>(Arrays.asList(SESSIONS_KEY + "test-id"));
+        when(this.jedisClient.getSessions(SESSIONS_KEY)).thenReturn(response);
 
         String[] result = this.store.keys();
 
         assertEquals(1, result.length);
-        assertArrayEquals(new String[]{"test-id"}, result);
+        assertArrayEquals(new String[]{SESSIONS_KEY + "test-id"}, result);
     }
 
     @Test
     public void keysJedisConnectionException() {
         doThrow(new JedisConnectionException("test-message"))
                 .when(this.jedisClient)
-                .getSessions("sessions");
+                .getSessions(SESSIONS_KEY);
 
         String[] result = this.store.keys();
 
@@ -189,10 +199,10 @@ public final class RedisStoreTest {
 
     @Test
     public void loadJedisConnectionException() throws UnsupportedEncodingException {
-        when(this.jedisClient.get("test-id")).thenThrow(new JedisConnectionException("test-message"));
+        when(this.jedisClient.get(SESSIONS_KEY + "test-id")).thenThrow(new JedisConnectionException("test-message"));
         this.store.setManager(this.manager);
 
-        Session result = this.store.load("test-id");
+        Session result = this.store.load(SESSIONS_KEY + "test-id");
 
         assertEquals(result.getId(), result.getId());
     }
@@ -234,18 +244,18 @@ public final class RedisStoreTest {
 
     @Test
     public void remove() throws IOException {
-        this.store.remove("test-id");
+        this.store.remove(SESSIONS_KEY + "test-id");
 
-        verify(this.jedisClient).del("sessions", "test-id");
+        verify(this.jedisClient).del(SESSIONS_KEY, SESSIONS_KEY + "test-id");
     }
 
     @Test
     public void removeJedisConnectionException() {
         doThrow(new JedisConnectionException("test-message"))
                 .when(this.jedisClient)
-                .del("sessions", "test-id");
+                .del(SESSIONS_KEY, SESSIONS_KEY + "test-id");
 
-        this.store.remove("test-id");
+        this.store.remove(SESSIONS_KEY + "test-id");
     }
 
     @Test
@@ -255,7 +265,11 @@ public final class RedisStoreTest {
 
         this.store.save(session);
 
-        verify(this.jedisClient).set(session.getId(), "sessions", this.sessionSerializationUtils.serialize(session), session.getMaxInactiveInterval());
+        verify(this.jedisClient).set(getRedisSessionId(session), SESSIONS_KEY, this.sessionSerializationUtils.serialize(session), session.getMaxInactiveInterval());
+    }
+
+    private String getRedisSessionId(Session session) {
+        return SESSIONS_KEY + session.getId();
     }
 
     @Test

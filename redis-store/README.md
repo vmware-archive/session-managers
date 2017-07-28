@@ -85,6 +85,7 @@ Configure `redis-store` using `<Store />` attributes:
 | `database` | `0` | Redis database. Cluster will ignore this property
 | `host` | `localhost` | Redis host. Cluster should follow this pattern: \<host>:\<port>;\<host>:\<port>;\<host>:\<port>
 | `password` | `<none>` | Redis AUTH password
+| `sessionKeyPrefix` | `sessions` | Prefix for redis keys. Useful for situations where 1 redis cluster serves multiple application clusters with potentially conflicting session IDs.
 | `port` | `6379` | Redis port. Also ignored in cluster
 | `timeout` | `2000` | Connection timeout (in milliseconds)
 | `uri` | `<none>` | Connection URI, e.g. `redis://username:password@localhost:6370/0`. Invalid for cluster configuration
