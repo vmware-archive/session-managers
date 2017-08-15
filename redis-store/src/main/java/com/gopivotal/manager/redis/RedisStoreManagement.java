@@ -40,6 +40,15 @@ public interface RedisStoreManagement {
     int getDatabase();
 
     /**
+     * Returns the Redis sessions key prefix
+     * Allows to configure a prefix that's added to the session id when a session is stored in Redis.
+     * Useful for situations where 1 redis cluster serves multiple application clusters with potentially conflicting session IDs.
+     * 
+     * @return the Redis sessions key prefix
+     */
+    String getSessionKeyPrefix();
+    
+    /**
      * Returns the Redis connection host
      * In case of cluster must follow this pattern:
      * <p>

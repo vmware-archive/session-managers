@@ -52,7 +52,6 @@ import static redis.clients.jedis.Protocol.DEFAULT_TIMEOUT;
 public final class RedisStore extends AbstractLifecycle implements RedisStoreManagement, Store {
 
     public static final int DEFAULT_SO_TIMEOUT = 2000;
-    private static final String SESSIONS_KEY = "sessions";
     private static final int DEFAULT_MAX_ATTEMPTS = 5;
     private final JmxSupport jmxSupport;
     private final LockTemplate lockTemplate = new LockTemplate();
@@ -62,6 +61,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
     private volatile Manager manager;
     private volatile int connectionPoolSize = GenericKeyedObjectPoolConfig.DEFAULT_MAX_TOTAL;
     private volatile int database = Protocol.DEFAULT_DATABASE;
+    private volatile String sessionKeyPrefix = "sessions";
     private volatile String host = "localhost";
     private boolean cluster = false;
     private volatile String password;
@@ -103,7 +103,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
             @Override
             public Void invoke() {
                 try {
-                    RedisStore.this.jedisClient.clean(SESSIONS_KEY);
+                    RedisStore.this.jedisClient.clean(getSessionKeyPrefix());
                 } catch (JedisConnectionException e) {
                     RedisStore.this.logger.error("Unable to clear persisted sessions", e);
                 }
@@ -178,6 +178,38 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
         });
     }
 
+    @Override
+    public String getSessionKeyPrefix() {
+        return this.lockTemplate.withReadLock(new LockTemplate.LockedOperation<String>() {
+
+            @Override
+            public String invoke() {
+                return RedisStore.this.sessionKeyPrefix;
+            }
+
+        });
+    }
+
+    /**
+     * Sets the sessionsKey Prefix
+     *
+     * @param sessionKeyPrefix the sessions key prefix
+     */
+    public void setSessionKeyPrefix(final String sessionKeyPrefix) {
+        this.lockTemplate.withWriteLock(new LockTemplate.LockedOperation<Void>() {
+
+            @Override
+            public Void invoke() {
+                RedisStore.this.logger.info("setting sessionsKey={}", sessionKeyPrefix);
+                String previous = RedisStore.this.sessionKeyPrefix;
+                RedisStore.this.sessionKeyPrefix = sessionKeyPrefix;
+                RedisStore.this.propertyChangeSupport.notify("sessionKeyPrefix", previous, RedisStore.this.sessionKeyPrefix);
+                return null;
+            }
+
+        });
+    }
+    
     @Override
     public String getHost() {
         return this.lockTemplate.withReadLock(new LockTemplate.LockedOperation<String>() {
@@ -309,7 +341,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
             @Override
             public Integer invoke() {
                 try {
-                    return RedisStore.this.jedisClient.count(SESSIONS_KEY);
+                    return RedisStore.this.jedisClient.count(getSessionKeyPrefix());
                 } catch (JedisConnectionException e) {
                     RedisStore.this.logger.error("Unable to get the number of persisted sessions", e);
                     return Integer.MIN_VALUE;
@@ -421,7 +453,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
             @Override
             public String[] invoke() {
                 try {
-                    Set<String> sessions = RedisStore.this.jedisClient.getSessions(SESSIONS_KEY);
+                    Set<String> sessions = RedisStore.this.jedisClient.getSessions(getSessionKeyPrefix());
                     return sessions.toArray(new String[sessions.size()]);
                 } catch (JedisConnectionException e) {
                     RedisStore.this.logger.error("Unable to get the keys of persisted sessions", e);
@@ -458,7 +490,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
             @Override
             public Void invoke() {
                 try {
-                    RedisStore.this.jedisClient.del(SESSIONS_KEY, id);
+                    RedisStore.this.jedisClient.del(getSessionKeyPrefix(), id);
                 } catch (JedisConnectionException e) {
                     RedisStore.this.logger.error("Unable to remove session {}", id, e);
                 }
@@ -482,11 +514,11 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
                     public Void invoke() {
                         try {
                             byte[] serialized = RedisStore.this.sessionSerializationUtils.serialize(session);
-                            RedisStore.this.jedisClient.set(session.getId(), SESSIONS_KEY, serialized, session.getMaxInactiveInterval());
+                            RedisStore.this.jedisClient.set(getRedisSessionId(session), getSessionKeyPrefix(), serialized, session.getMaxInactiveInterval());
                         } catch (JedisConnectionException e) {
-                            RedisStore.this.logger.error("Unable to persist session {}", session.getId(), e);
+                            RedisStore.this.logger.error("Unable to persist session {}", getRedisSessionId(session), e);
                         } catch (IOException e) {
-                            RedisStore.this.logger.error("Unable to save session {}", session.getId(), e);
+                            RedisStore.this.logger.error("Unable to save session {}", getRedisSessionId(session), e);
                         }
                         return null;
                     }
@@ -556,6 +588,16 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
         });
     }
 
+    
+    /**
+     *
+     * @param session
+     * @return The session Id + the session prefix
+     */
+    private String getRedisSessionId(final Session session) {
+        return  getSessionKeyPrefix() + session.getId() ;
+    }
+    
     @Override
     protected void stopInternal() {
         this.lockTemplate.withWriteLock(new LockTemplate.LockedOperation<Void>() {
