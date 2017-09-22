@@ -19,17 +19,18 @@ package com.gopivotal.manager;
 import org.apache.catalina.Lifecycle;
 import org.apache.catalina.LifecycleEvent;
 import org.apache.catalina.LifecycleListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
+
+import static java.util.logging.Level.WARNING;
 
 final class StandardLifecycleSupport implements LifecycleSupport {
 
     private final List<LifecycleListener> lifecycleListeners = new ArrayList<LifecycleListener>();
 
-    private final Logger logger = LoggerFactory.getLogger(StandardLifecycleSupport.class);
+    private final Logger logger = Logger.getLogger(this.getClass().getName());
 
     private final Object monitor = new Object();
 
@@ -72,7 +73,7 @@ final class StandardLifecycleSupport implements LifecycleSupport {
             try {
                 lifecycleListener.lifecycleEvent(lifecycleEvent);
             } catch (RuntimeException e) {
-                this.logger.warn("Exception encountered while notifying listener of lifecycle event", e);
+                this.logger.log(WARNING, "Exception encountered while notifying listener of lifecycle event", e);
             }
         }
     }

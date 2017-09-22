@@ -29,8 +29,6 @@ import org.apache.catalina.Session;
 import org.apache.catalina.Store;
 import org.apache.catalina.Valve;
 import org.apache.commons.pool2.impl.GenericKeyedObjectPoolConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -43,6 +41,9 @@ import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Set;
+import java.util.logging.Logger;
+
+import static java.util.logging.Level.SEVERE;
 
 /**
  * An implementation of {@link Store} that persists data to Redis
@@ -56,7 +57,9 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
     private final JmxSupport jmxSupport;
 
     private final LockTemplate lockTemplate = new LockTemplate();
-    private final Logger logger = LoggerFactory.getLogger(RedisStore.class);
+
+    private final Logger logger = Logger.getLogger(this.getClass().getName());
+
     private final PropertyChangeSupport propertyChangeSupport;
 
     private volatile int connectionPoolSize = GenericKeyedObjectPoolConfig.DEFAULT_MAX_TOTAL;
@@ -131,7 +134,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
                     });
                 } catch (JedisConnectionException e) {
-                    RedisStore.this.logger.error("Unable to clear persisted sessions", e);
+                    RedisStore.this.logger.log(SEVERE, "Unable to clear persisted sessions", e);
                 }
 
                 return null;
@@ -356,7 +359,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
                     });
                 } catch (JedisConnectionException e) {
-                    RedisStore.this.logger.error("Unable to get the number of persisted sessions", e);
+                    RedisStore.this.logger.log(SEVERE, "Unable to get the number of persisted sessions", e);
                     size = Integer.MIN_VALUE;
                 }
 
@@ -453,7 +456,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
                     });
                 } catch (JedisConnectionException e) {
-                    RedisStore.this.logger.error("Unable to get the keys of persisted sessions", e);
+                    RedisStore.this.logger.log(SEVERE, "Unable to get the keys of persisted sessions", e);
                     keys = new String[0];
                 }
 
@@ -520,7 +523,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
                     });
                 } catch (JedisConnectionException e) {
-                    RedisStore.this.logger.error("Unable to remove session {}", id, e);
+                    RedisStore.this.logger.log(SEVERE, String.format("Unable to remove session %s", id), e);
                 }
 
                 return null;
@@ -555,7 +558,8 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
                                                                                                        t.sadd(SESSIONS_KEY, sessionId);
                                                                                                        t.exec();
                                                                                                    } catch (IOException e) {
-                                                                                                       RedisStore.this.logger.error("Unable to save session {}", sessionId, e);
+                                                                                                       RedisStore.this.logger.log(SEVERE, String.format("Unable to save session %s",
+                                                                                                               sessionId), e);
                                                                                                    }
 
                                                                                                    return null;
@@ -565,7 +569,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
                                                    );
                                                } catch (JedisConnectionException e) {
-                                                   RedisStore.this.logger.error("Unable to persist session {}", sessionId, e);
+                                                   RedisStore.this.logger.log(SEVERE, String.format("Unable to persist session %s", sessionId), e);
                                                }
 
                                                return null;
@@ -584,7 +588,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
             public Void invoke() {
                 for (Valve valve : RedisStore.this.manager.getContainer().getPipeline().getValves()) {
                     if (valve instanceof SessionFlushValve) {
-                        RedisStore.this.logger.debug("Setting '{}' as the store for '{}'", this, valve);
+                        RedisStore.this.logger.fine(String.format("Setting '%s' as the store for '%s'", this, valve));
                         ((SessionFlushValve) valve).setStore(RedisStore.this);
                     }
                 }
@@ -640,7 +644,8 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
     }
 
     private void connect() {
-        this.logger.info("Connecting to Redis Server at redis://{}:{}/{}", this.host, this.port, this.database);
+        this.logger.info(String.format("Connecting to Redis Server at redis://%s:%d/%d", this.host, this.port,
+                this.database));
 
         this.jedisTemplate.withJedis(new JedisTemplate.JedisOperation<Void>() {
 
@@ -672,7 +677,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
     }
 
     private Session logAndCreateEmptySession(String id, Exception e) {
-        RedisStore.this.logger.error("Unable to load session {}. Empty session created.", id, e);
+        RedisStore.this.logger.log(SEVERE, String.format("Unable to load session %s. Empty session created.", id), e);
         return RedisStore.this.manager.createSession(id);
     }
 
