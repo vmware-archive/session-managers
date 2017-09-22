@@ -29,8 +29,6 @@ import org.apache.catalina.Session;
 import org.apache.catalina.Store;
 import org.apache.catalina.Valve;
 import org.apache.commons.pool2.impl.GenericKeyedObjectPoolConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPool;
@@ -43,6 +41,9 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Logger;
+
+import static java.util.logging.Level.SEVERE;
 
 import static redis.clients.jedis.Protocol.DEFAULT_TIMEOUT;
 
@@ -56,7 +57,9 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
     private static final int DEFAULT_MAX_ATTEMPTS = 5;
     private final JmxSupport jmxSupport;
     private final LockTemplate lockTemplate = new LockTemplate();
-    private final Logger logger = LoggerFactory.getLogger(RedisStore.class);
+
+    private final Logger logger = Logger.getLogger(this.getClass().getName());
+
     private final PropertyChangeSupport propertyChangeSupport;
     protected volatile JedisClient jedisClient;
     private volatile Manager manager;
@@ -76,7 +79,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
      */
     public RedisStore() {
         Package pkg = this.getClass().getPackage();
-        this.logger.info("{} {}, {}", pkg.getImplementationVendor(), pkg.getImplementationTitle(),
+        RedisStore.this.logger.info(pkg.getImplementationVendor() + " " + pkg.getImplementationTitle() + ", " +
                 pkg.getImplementationVersion());
         this.logger.info(String.format("Sessions will be persisted to Redis using a %s", this.getClass().getName()));
         this.jmxSupport = new StandardJmxSupport();
@@ -105,7 +108,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
                 try {
                     RedisStore.this.jedisClient.clean(SESSIONS_KEY);
                 } catch (JedisConnectionException e) {
-                    RedisStore.this.logger.error("Unable to clear persisted sessions", e);
+                    RedisStore.this.logger.log(SEVERE, "Unable to clear persisted sessions", e);
                 }
                 return null;
             }
@@ -135,7 +138,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
             @Override
             public Void invoke() {
-                RedisStore.this.logger.info("setting connectionPoolSize={}", connectionPoolSize);
+                RedisStore.this.logger.info("setting connectionPoolSize=" + connectionPoolSize);
                 int previous = RedisStore.this.connectionPoolSize;
                 RedisStore.this.connectionPoolSize = connectionPoolSize;
                 RedisStore.this.propertyChangeSupport.notify("connectionPoolSize", previous,
@@ -168,7 +171,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
             @Override
             public Void invoke() {
-                RedisStore.this.logger.info("setting database={}", database);
+                RedisStore.this.logger.info("setting database=" + database);
                 int previous = RedisStore.this.database;
                 RedisStore.this.database = database;
                 RedisStore.this.propertyChangeSupport.notify("database", previous, RedisStore.this.database);
@@ -200,7 +203,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
             @Override
             public Void invoke() {
-                RedisStore.this.logger.info("setting host={}", host);
+                RedisStore.this.logger.info("setting host=" + host);
                 String previous = RedisStore.this.host;
                 RedisStore.this.host = host;
                 RedisStore.this.propertyChangeSupport.notify("host", previous, RedisStore.this.host);
@@ -292,7 +295,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
             @Override
             public Void invoke() {
-                RedisStore.this.logger.info("setting port={}", port);
+                RedisStore.this.logger.info("setting port=" + port);
                 int previous = RedisStore.this.port;
                 RedisStore.this.port = port;
                 RedisStore.this.propertyChangeSupport.notify("port", previous, RedisStore.this.port);
@@ -311,7 +314,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
                 try {
                     return RedisStore.this.jedisClient.count(SESSIONS_KEY);
                 } catch (JedisConnectionException e) {
-                    RedisStore.this.logger.error("Unable to get the number of persisted sessions", e);
+                    RedisStore.this.logger.log(SEVERE, "Unable to get the number of persisted sessions", e);
                     return Integer.MIN_VALUE;
                 }
             }
@@ -341,7 +344,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
             @Override
             public Void invoke() {
-                RedisStore.this.logger.info("setting timeout={}", timeout);
+                RedisStore.this.logger.info("setting timeout=" + timeout);
                 int previous = RedisStore.this.timeout;
                 RedisStore.this.timeout = timeout;
                 RedisStore.this.propertyChangeSupport.notify("timeout", previous, RedisStore.this.timeout);
@@ -402,7 +405,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
 
             @Override
             public Void invoke() {
-                RedisStore.this.logger.info("setting uri={}", uri);
+                RedisStore.this.logger.info("setting uri=" + uri);
                 URI richUri = URI.create(uri);
                 setHost(richUri.getHost());
                 setPort(richUri.getPort());
@@ -424,7 +427,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
                     Set<String> sessions = RedisStore.this.jedisClient.getSessions(SESSIONS_KEY);
                     return sessions.toArray(new String[sessions.size()]);
                 } catch (JedisConnectionException e) {
-                    RedisStore.this.logger.error("Unable to get the keys of persisted sessions", e);
+                    RedisStore.this.logger.log(SEVERE, "Unable to get the keys of persisted sessions", e);
                     return new String[0];
                 }
             }
@@ -460,7 +463,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
                 try {
                     RedisStore.this.jedisClient.del(SESSIONS_KEY, id);
                 } catch (JedisConnectionException e) {
-                    RedisStore.this.logger.error("Unable to remove session {}", id, e);
+                    RedisStore.this.logger.log(SEVERE, String.format("Unable to remove session %s", id), e);
                 }
 
                 return null;
@@ -484,14 +487,13 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
                             byte[] serialized = RedisStore.this.sessionSerializationUtils.serialize(session);
                             RedisStore.this.jedisClient.set(session.getId(), SESSIONS_KEY, serialized, session.getMaxInactiveInterval());
                         } catch (JedisConnectionException e) {
-                            RedisStore.this.logger.error("Unable to persist session {}", session.getId(), e);
+                            RedisStore.this.logger.log(SEVERE, "Unable to persist session " + session.getId(), e);
                         } catch (IOException e) {
-                            RedisStore.this.logger.error("Unable to save session {}", session.getId(), e);
+                            RedisStore.this.logger.log(SEVERE, "Unable to save session " + session.getId(), e);
                         }
                         return null;
                     }
                 }
-
         );
     }
 
@@ -503,7 +505,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
             public Void invoke() {
                 for (Valve valve : RedisStore.this.manager.getContext().getPipeline().getValves()) {
                     if (valve instanceof SessionFlushValve) {
-                        RedisStore.this.logger.debug("Setting '{}' as the store for '{}'", this, valve);
+                        RedisStore.this.logger.fine(String.format("Setting '%s' as the store for '%s'", this, valve));
                         ((SessionFlushValve) valve).setStore(RedisStore.this);
                     }
                 }
@@ -524,7 +526,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
                     try {
                         RedisStore.this.jedisClient.close();
                     } catch (IOException e) {
-                        RedisStore.this.logger.error("Error closing previous template", e);
+                        RedisStore.this.logger.log(SEVERE, "Error closing previous template", e);
                     }
                 }
                 JedisPoolConfig poolConfig = new JedisPoolConfig();
@@ -594,7 +596,7 @@ public final class RedisStore extends AbstractLifecycle implements RedisStoreMan
     }
 
     private Session logAndCreateEmptySession(String id, Exception e) {
-        RedisStore.this.logger.error("Unable to load session {}. Empty session created.", id, e);
+        RedisStore.this.logger.log(SEVERE, String.format("Unable to load session %s. Empty session created.", id), e);
         return RedisStore.this.manager.createSession(id);
     }
 
