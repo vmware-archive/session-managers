@@ -18,4 +18,3 @@ This project is released under the [Apache License, Version 2.0][a].
 [c]: CONTRIBUTING.md
 [m]: http://tomcat.apache.org/tomcat-8.5-doc/config/manager.html
 [p]: https://help.github.com/categories/collaborating-with-issues-and-pull-requests/
->>>>>>> 1.2.x
