@@ -103,4 +103,4 @@ Example: set the maximum number of concurrent connections to 20:
 </Context>
 ```
 
-[r]: http://redis.io
+[r]: https://redis.io

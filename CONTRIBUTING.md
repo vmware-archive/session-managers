@@ -5,7 +5,7 @@ _Please refer back to this document as a checklist before issuing any pull reque
 ## Understanding the basics
 Not sure what a pull request is, or how to submit one?  Take a look at GitHub's excellent [help documentation][] first.
 
-[help documentation]: http://help.github.com/send-pull-requests
+[help documentation]: https://help.github.com/send-pull-requests
 
 ## Search GitHub Issues first; create an issue if necessary
 Is there already an issue that addresses your concern?  Do a bit of searching in our [GitHub issue tracker][] to see if you can find something similar. If not, please create a new issue before submitting a pull request unless the change is truly trivial, e.g. typo fixes, removing compiler warnings, etc.
@@ -66,7 +66,7 @@ then be sure to update it to 2014 appropriately
 ```
 
 ## Squash commits
-Use `git rebase --interactive`, `git add --patch` and other tools to "squash" multiple commits into atomic changes. In addition to the man pages for git, there are many resources online to help you understand how these tools work. Here is one: <http://git-scm.com/book/en/Git-Tools-Rewriting-History>.
+Use `git rebase --interactive`, `git add --patch` and other tools to "squash" multiple commits into atomic changes. In addition to the man pages for git, there are many resources online to help you understand how these tools work. Here is one: <https://git-scm.com/book/en/Git-Tools-Rewriting-History>.
 
 ## Use real name in git commits
 Please configure git to use your real first and last name for any commits you intend to submit as pull requests. For example, this is not acceptable:
@@ -131,7 +131,7 @@ Issue: #10, #11
 1. Mention associated GitHub issue(s) at the end of the commit comment, prefixed with "Issue: " as above
 1. In the body of the commit message, explain how things worked before this commit, what has changed, and how things work now
 
-[commit guidelines section of Pro Git]: http://git-scm.com/book/en/Distributed-Git-Contributing-to-a-Project#Commit-Guidelines
+[commit guidelines section of Pro Git]: https://git-scm.com/book/en/Distributed-Git-Contributing-to-a-Project#Commit-Guidelines
 
 ## Run all tests prior to submission
 See the [Running Tests][] section of the README for instructions. Make sure that all tests pass prior to submitting your pull request.
