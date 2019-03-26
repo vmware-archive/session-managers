@@ -39,5 +39,5 @@ matrix:
 notifications:
   webhooks:
     urls:
-      - http://build-monitor.cfapps.io/projects/SMAN/webhook
+      - https://build-monitor.cfapps.io/projects/SMAN/webhook
     on_start: true

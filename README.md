@@ -63,7 +63,7 @@ This project is released under version 2.0 of the [Apache License][a].
 
 [a]: http://www.apache.org/licenses/LICENSE-2.0
 [c]: CONTRIBUTING.md
-[m]: http://tomcat.apache.org/tomcat-7.0-doc/config/manager.html
-[p]: http://help.github.com/send-pull-requests
-[r]: http://redis.io
+[m]: https://tomcat.apache.org/tomcat-7.0-doc/config/manager.html
+[p]: https://help.github.com/send-pull-requests
+[r]: https://redis.io
 [s]: https://www.slf4j.org/manual.html
