@@ -19,6 +19,6 @@ This project is released under the [Apache License, Version 2.0][a].
 
 [a]: http://www.apache.org/licenses/LICENSE-2.0
 [c]: CONTRIBUTING.md
-[m]: http://tomcat.apache.org/tomcat-8.5-doc/config/manager.html
+[m]: https://tomcat.apache.org/tomcat-8.5-doc/config/manager.html
 [p]: https://help.github.com/categories/collaborating-with-issues-and-pull-requests/
 [s]: https://www.slf4j.org/manual.html
