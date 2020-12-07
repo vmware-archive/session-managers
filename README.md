@@ -1,3 +1,6 @@
+# :bangbang: The Sessions Managers repository will be archived at the end of the year 2020
+## This project has largely been inactive and will no longer be maintained once it is archived 
+
 # Pivotal Session Managers
 This project contains implementations of the [Tomcat `PersistentManager` Store][m].
 
